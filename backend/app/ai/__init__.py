@@ -35,7 +35,14 @@ from app.ai.ner import (
     EntityExtractor,
     TARGET_ENTITY_TYPES
 )
-from app.ai.urgency import urgency_detector
+from app.ai.urgency import (
+    urgency_detector,
+    BaseUrgencyDetector,
+    RuleEnhancedUrgencyDetector,
+    UrgencyDetector,
+    get_urgency_detector,
+    URGENCY_TIERS
+)
 from app.ai.priority import priority_calculator
 from app.ai.duplicate_detector import duplicate_detector
 from app.ai.summarizer import summarizer
@@ -78,6 +85,11 @@ __all__ = [
     "EntityExtractor",
     "TARGET_ENTITY_TYPES",
     "urgency_detector",
+    "BaseUrgencyDetector",
+    "RuleEnhancedUrgencyDetector",
+    "UrgencyDetector",
+    "get_urgency_detector",
+    "URGENCY_TIERS",
     "priority_calculator",
     "duplicate_detector",
     "summarizer",

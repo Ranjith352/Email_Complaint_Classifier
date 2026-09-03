@@ -47,7 +47,7 @@ def test_ner_extraction():
 
 def test_urgency_and_priority():
     urg = urgency_detector.detect("System outage right now! Critical production crash!", category="Technical Problem")
-    assert urg["urgency"] == "Critical"
+    assert urg["urgency"].upper() == "CRITICAL"
 
     prio = priority_calculator.calculate(
         urgency="Critical",

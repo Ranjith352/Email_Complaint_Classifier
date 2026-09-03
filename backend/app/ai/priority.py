@@ -15,7 +15,8 @@ class PriorityCalculator:
             "Medium": 40.0,
             "Low": 20.0
         }
-        score = base_scores.get(urgency, 40.0)
+        norm_urgency = str(urgency).title()
+        score = base_scores.get(norm_urgency, 40.0)
 
         # Negative sentiment or anger escalates priority
         if str(sentiment).upper() == "NEGATIVE":
