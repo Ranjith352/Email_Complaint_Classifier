@@ -1,338 +1,126 @@
-# AI-Powered Complaint Management System
+# AutoTriage AI - Intelligent Complaint Classification & Resolution System
 
-An intelligent Complaint Management System built using **Python**, **Flask**, **Firebase Firestore**, and **Machine Learning** to automate complaint registration, classification, tracking, and notification.
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
+[![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
+[![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
+[![Pytest Suite](https://img.shields.io/badge/Testing-Pytest-yellow.svg)](https://pytest.org/)
 
-The system allows users to submit complaints through a web interface, automatically classifies complaints into appropriate departments using an AI model, stores complaint records securely in Firebase, and sends email notifications using the Gmail API.
-
----
-
-## Features
-
-- User-friendly complaint submission portal
-- AI-based complaint classification
-- Automatic department assignment
-- Complaint status tracking
-- Firebase Firestore integration
-- Gmail API email notifications
-- Complaint history management
-- Dashboard for complaint monitoring
-- Secure authentication
-- Responsive web interface
+An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-label categorization and SLA urgency assignment, executes pgvector RAG semantic search, and generates empathetic resolution drafts using Groq Cloud and local Ollama LLMs.
 
 ---
 
-## Technologies Used
+## 🚀 Key Features
 
-### Backend
-- Python
-- Flask
-
-### Frontend
-- HTML5
-- CSS3
-- Bootstrap
-- JavaScript
-
-### Database
-- Firebase Firestore
-
-### Machine Learning
-- Scikit-learn
-- TF-IDF Vectorizer
-- Multinomial Naive Bayes
-
-### APIs
-- Gmail API
-- Firebase Admin SDK
-
-### Other Libraries
-- Pandas
-- NumPy
-- Joblib
-- Pickle
+1. **Automated Gmail Ingestion**: Seamless OAuth 2.0 integration polling labeled incoming messages.
+2. **NLP & Semantic Embeddings**: Generates 384-dimensional dense semantic vectors using `sentence-transformers` (`all-MiniLM-L6-v2`) with `spaCy` entity extraction.
+3. **pgvector RAG Retrieval**: Queries PostgreSQL `pgvector` for highest cosine similarity matches against historical resolutions and standard operating procedures (SOPs).
+4. **Dual Generative AI Engine**:
+   - **Groq API**: Sub-second cloud inference (`llama-3.3-70b-versatile`).
+   - **Local Ollama**: 100% private offline inference (`llama3`, `mistral`).
+   - **Deterministic Fallback**: In-memory rule engine guarantees 100% system uptime.
+5. **Modern Single Page Application (SPA)**:
+   - React 18, Vite, React Router, and Tailwind CSS with custom glassmorphic styling.
+   - Interactive Recharts analytics (Department volume velocity, SLA tracking, Emotion radar).
+   - Real-time AI Triage Drawer (Executive summary, RAG advice, 1-click draft response generator).
+6. **Robust Backend API**:
+   - FastAPI REST API with automatic interactive Swagger/OpenAPI documentation (`/docs`).
+   - JWT stateless Bearer authentication with bcrypt password security.
+   - SQLAlchemy 2.0 with automated fallback to SQLite if PostgreSQL is unconfigured.
 
 ---
 
-## Project Structure
+## 🛠️ Technology Stack
 
-```
-Complaint-System/
-│
-├── app.py
-├── ai_engine.py
-├── firebase_config.py
-├── gmail_service.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── .env.example
-│
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── images/
-│
-├── templates/
-│
-├── models/
-│
-├── data/
-│
-├── screenshots/
-│
-└── instance/
-```
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React, Vite, React Router, Axios, Tailwind CSS, Recharts, Lucide Icons |
+| **Backend** | FastAPI, Python 3.12, Pydantic v2, SQLAlchemy 2.0, Alembic, JWT Auth |
+| **Database & Vector** | PostgreSQL 16, `pgvector` (with SQLite fallback) |
+| **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
+| **Generative AI** | Groq Cloud API, Ollama (Local LLM), RAG Pipeline |
+| **Email Ingestion** | Gmail API, Google OAuth 2.0 |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio |
+| **Documentation** | Swagger/OpenAPI, `README.md`, `ARCHITECTURE.md` |
 
 ---
 
-## System Workflow
+## ⚡ Quick Start Guide
 
-1. User submits a complaint.
-2. Complaint details are sent to the Flask backend.
-3. AI model predicts the complaint category.
-4. Complaint is stored in Firebase Firestore.
-5. Email notification is sent to the user.
-6. Complaint status can be viewed and updated.
-7. Dashboard displays complaint statistics.
-
----
-
-## Machine Learning Model
-
-The AI module classifies complaints into predefined categories using Natural Language Processing (NLP).
-
-### Steps
-
-- Text preprocessing
-- Tokenization
-- TF-IDF Vectorization
-- Complaint classification
-- Department prediction
-
-### Algorithms Used
-
-- TF-IDF Vectorizer
-- Multinomial Naive Bayes
-
----
-
-## Installation
-
-### Clone Repository
-
+### 1. Clone the Repository & Configure Environment
 ```bash
-git clone https://github.com/yourusername/Complaint-System.git
-
-cd Complaint-System
+git clone https://github.com/Ranjith352/Email_Complaint_Classifier.git
+cd Email_Complaint_Classifier
+cp .env.example .env
 ```
 
----
-
-### Create Virtual Environment
-
-Windows
-
+### 2. (Optional) Launch PostgreSQL with pgvector via Docker
+If you wish to run a dedicated PostgreSQL 16 instance with `pgvector`:
 ```bash
+docker-compose up -d
+```
+> **Note**: If you don't run PostgreSQL, the backend automatically initializes an in-memory/local SQLite database with cosine vector support so you can test instantly.
+
+### 3. Start the FastAPI Backend
+```bash
+# Create and activate Python virtual environment
 python -m venv venv
+.\venv\Scripts\activate      # On Windows
+# source venv/bin/activate    # On Linux/macOS
 
-venv\Scripts\activate
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Launch FastAPI development server
+uvicorn backend.app.main:app --reload --port 8000
 ```
+Interactive Swagger API documentation will be available at: **http://127.0.0.1:8000/docs**
 
-Linux/Mac
-
+### 4. Start the React Frontend
 ```bash
-python3 -m venv venv
-
-source venv/bin/activate
+cd frontend
+npm install
+npm run dev
 ```
+Open your browser at: **http://localhost:5173**
+
+**Default Demo Credentials**:
+- **Email**: `admin@complaints.io`
+- **Password**: `admin123`
 
 ---
 
-### Install Dependencies
+## 🧪 Running Automated Tests
 
+Run the backend Pytest suite:
 ```bash
-pip install -r requirements.txt
+pytest backend/app/tests -v
 ```
+
+Tests include:
+- `test_api_auth.py`: JWT token generation, unauthorized access protection, `/me` profile retrieval.
+- `test_api_complaints.py`: CRUD lifecycle, dynamic SLA deadlines, ticket resolution, knowledge base indexing.
+- `test_ai_services.py`: Sentence Transformer embeddings, cosine similarity RAG, Groq/Ollama LLM fallbacks.
 
 ---
 
-## Firebase Setup
+## 📖 System Architecture
 
-1. Create a Firebase project.
-2. Enable Firestore Database.
-3. Download the Firebase Admin SDK key.
-4. Rename it as
-
-```
-firebase_key.json
-```
-
-5. Place it inside the project directory.
+For in-depth architectural diagrams, database ERD, sequence diagrams, and pipeline design, review:
+👉 **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ---
 
-## Gmail API Setup
+## 🔒 Security & OAuth Configuration
 
-1. Create a Google Cloud Project.
-2. Enable Gmail API.
-3. Create OAuth Credentials.
-4. Download
-
-```
-credentials.json
-```
-
-5. Place it inside the project folder.
-
----
-
-## Environment Variables
-
-Create a `.env` file.
-
-Example:
-
-```env
-SECRET_KEY=your_secret_key
-
-EMAIL_ADDRESS=your_email@gmail.com
-
-EMAIL_PASSWORD=your_app_password
-
-FIREBASE_KEY=firebase_key.json
-```
-
----
-
-## Run the Application
-
-```bash
-python app.py
-```
-
-Visit
-
-```
-http://127.0.0.1:5000
-```
-
----
-
-## Screenshots
-
-### Home Page
-
-```
-Add screenshot here
-```
-
----
-
-### Complaint Registration
-
-```
-Add screenshot here
-```
-
----
-
-### AI Classification
-
-```
-Add screenshot here
-```
-
----
-
-### Complaint Dashboard
-
-```
-Add screenshot here
-```
-
----
-
-## Future Enhancements
-
-- Admin Dashboard
-- User Authentication using JWT
-- SMS Notifications
-- Complaint Priority Prediction
-- Deep Learning Based Classification
-- Multi-language Complaint Support
-- Sentiment Analysis
-- REST API
-- Docker Deployment
-- Cloud Deployment (AWS/Azure)
-
----
-
-## Learning Outcomes
-
-Through this project, the following concepts were implemented:
-
-- Flask Web Development
-- Machine Learning Integration
-- Natural Language Processing
-- Firebase Firestore
-- Gmail API
-- RESTful Architecture
-- Python Backend Development
-- CRUD Operations
-- AI-Based Text Classification
-- Secure Authentication
-
----
-
-## Requirements
-
-Install dependencies using
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## Author
-
-**Ranjith L K**
-
-Coimbatore Institute of Technology
-
----
-
-## License
-
-This project is developed for educational and learning purposes.
-
-```
-
----
-
-# GitHub Repository Description
-
-You can use this as the repository description:
-
-> AI-powered Complaint Management System using Flask, Firebase, Machine Learning, and Gmail API for intelligent complaint classification and automated notification.
-
----
-
-# GitHub Topics
-
-```
-python
-flask
-machine-learning
-firebase
-firestore
-gmail-api
-nlp
-complaint-management
-scikit-learn
-ai
-web-application
-bootstrap
-```
-
-This README is professional enough for a resume project and follows the style commonly seen in well-maintained GitHub repositories.
+1. **Gmail API**:
+   - Create a Google Cloud project with the Gmail API enabled.
+   - Download OAuth 2.0 client credentials as `credentials.json` in the project root.
+   - Run the sync from the UI or call `/api/v1/gmail/sync` to authorize the read-only scope.
+2. **Groq API**:
+   - Obtain a free API key from [Groq Cloud Console](https://console.groq.com/).
+   - Add `GROQ_API_KEY=your-key-here` to your `.env` file.
+3. **Local Ollama**:
+   - Install [Ollama](https://ollama.com/) and run `ollama run llama3`.
+   - Set `OLLAMA_BASE_URL=http://localhost:11434` in `.env`.

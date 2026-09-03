@@ -1,31 +1,54 @@
-# Python cache
+# Python & Virtual Environments
+venv/
+.venv/
+env/
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
+*.so
+.pytest_cache/
+**/.pytest_cache/
 
-# Virtual environment
-venv/
-env/
-.venv/
+# Databases & Local state
+*.db
+*.sqlite
+*.sqlite3
+autotriage.db
+complaints.db
+test_complaints.db
+storage/*.db
+storage/*.sqlite
 
-# Environment variables
+# Environment variables & secrets
 .env
-
-# Firebase / Google Credentials
+**/.env
 credentials.json
-firebase_key.json
 token.json
+firebase_key.json
+token.pickle
 
-# IDE
-.vscode/
-.idea/
+# Node & Frontend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# OS files
-Thumbs.db
+# OS Artifacts & IDE
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# Logs
-*.log
-
-# Jupyter
-.ipynb_checkpoints/
+# Models & Machine Learning checkpoints
+ml/models/*.bin
+ml/models/*.pt
+ml/models/*.safetensors
+ml/models/*.onnx
