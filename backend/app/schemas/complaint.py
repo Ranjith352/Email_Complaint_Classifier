@@ -122,6 +122,8 @@ class ComplaintResponse(BaseModel):
     priority_score: float
     ai_confidence: float
     review_required: bool
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
     ai_status: str
     status: str
     summary: Optional[str] = None
@@ -129,6 +131,13 @@ class ComplaintResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None
+
+class ComplaintReviewRequest(BaseModel):
+    department_id: Optional[int] = None
+    team_id: Optional[int] = None
+    assigned_agent_id: Optional[int] = None
+    reviewer_name: str = "Support Lead"
+    notes: Optional[str] = None
 
     # Backward compatibility aliases
     ticket_number: Optional[str] = None

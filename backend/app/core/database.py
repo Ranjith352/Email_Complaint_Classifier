@@ -38,6 +38,18 @@ def init_db():
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+    # Auto-migrate schema if new columns were added
+    try:
+        with engine.connect() as conn:
+            for col, col_type in [("reviewed_by", "VARCHAR(255)"), ("reviewed_at", "DATETIME")]:
+                try:
+                    conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col} {col_type};"))
+                    conn.commit()
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 init_db()
 
 def get_database_url():

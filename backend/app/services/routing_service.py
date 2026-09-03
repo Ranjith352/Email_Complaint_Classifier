@@ -27,9 +27,15 @@ class RoutingService:
 
         # 1. Match by department name if provided
         if department_name:
-            dept_lower = department_name.lower()
+            dept_lower = department_name.strip().lower()
+            # Prioritize exact match first
             for dept in active_depts:
-                if dept.name.lower() in dept_lower or dept_lower in dept.name.lower():
+                if dept.name.strip().lower() == dept_lower:
+                    team_id = RoutingService._find_team_id(db, dept.id, team_name, text_content)
+                    return dept.id, team_id, dept.name
+            # Substring fallback
+            for dept in active_depts:
+                if dept.name.strip().lower() in dept_lower or dept_lower in dept.name.strip().lower():
                     team_id = RoutingService._find_team_id(db, dept.id, team_name, text_content)
                     return dept.id, team_id, dept.name
 

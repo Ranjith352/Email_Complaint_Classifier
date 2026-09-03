@@ -157,8 +157,9 @@ class AIOrchestrator:
         team = class_res.get("team", "General Triage")
 
         # Human Review Required Flag:
-        # Triggered if confidence < 0.75, or priority is CRITICAL with NEGATIVE sentiment
-        review_required = (confidence < 0.75) or (priority_name == "CRITICAL" and sentiment == "NEGATIVE")
+        # confidence >= 0.85: review_required = False
+        # confidence < 0.85 (0.60-0.84 or <0.60): review_required = True
+        review_required = confidence < 0.85
 
         execution_time_ms = round((time.time() - start_time) * 1000, 2)
 

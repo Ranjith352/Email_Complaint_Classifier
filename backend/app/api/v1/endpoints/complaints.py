@@ -14,7 +14,7 @@ from app.schemas.complaint import (
     ComplaintCreate, ComplaintResponse, ComplaintUpdate,
     AssignRequest, ResolveRequest, FeedbackCreate, FeedbackResponse,
     EscalateRequest, SendResponseRequest, StatusTransitionRequest,
-    ComplaintEventResponse, ComplaintEntityResponse
+    ComplaintEventResponse, ComplaintEntityResponse, ComplaintReviewRequest
 )
 from app.ai.ai_orchestrator import ai_orchestrator
 from app.services.audit_service import audit_service
@@ -361,4 +361,20 @@ def get_complaint_entities(complaint_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Complaint not found")
     entities = db.query(ComplaintEntity).filter(ComplaintEntity.complaint_id == complaint_id).all()
     return entities
+
+@router.post("/{complaint_id}/review", response_model=ComplaintResponse)
+def review_complaint(complaint_id: int, req: ComplaintReviewRequest, db: Session = Depends(get_db)):
+    """Completes human review for a complaint, updating review_required, reviewed_by, reviewed_at, and finalizing department."""
+    c = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    return complaint_service.review_complaint(
+        db=db,
+        complaint=c,
+        department_id=req.department_id,
+        team_id=req.team_id,
+        assigned_agent_id=req.assigned_agent_id,
+        reviewer_name=req.reviewer_name,
+        notes=req.notes
+    )
 

@@ -87,60 +87,135 @@ class ComplaintService:
             }
         )
 
-        # 3. Route Department and Team
-        dept_id, team_id, dept_name = routing_service.route_complaint(
-            db=db,
-            department_name=ai_res["department_name"],
-            team_name=ai_res["team_name"],
-            text_content=complaint_in.get_description()
-        )
+        # 3. Confidence-Based Routing & Human Review Decision
+        # Thresholds:
+        # - confidence >= 0.85: Automatically route
+        # - confidence 0.60 - 0.84: Route but mark review_required = true
+        # - confidence < 0.60: Do not automatically finalize department. Require human review.
+        ai_confidence = float(ai_res.get("confidence", ai_res.get("cat_confidence", 0.90)))
 
-        # Lifecycle Event 4: Routed to Department
-        lifecycle_service.transition_status(
-            db=db,
-            complaint=complaint,
-            new_status="ROUTED",
-            actor="AI_ENGINE",
-            description=f"Routed to {dept_name or ai_res['department_name'] or 'General Triage'}",
-            event_metadata={"department_id": dept_id, "department_name": dept_name}
-        )
-
-        # Lifecycle Event 5: Assigned to Team (if matched)
-        team_label = ai_res.get("team_name")
-        if team_label:
-            lifecycle_service.record_event(
+        if ai_confidence >= 0.85:
+            review_required = False
+            dept_id, team_id, dept_name = routing_service.route_complaint(
                 db=db,
-                complaint_id=complaint.id,
-                event_type="TEAM_ASSIGNED",
-                actor="AI_ENGINE",
-                description=f"Assigned to {team_label}",
-                event_metadata={"team_id": team_id, "team_name": team_label}
+                department_name=ai_res["department_name"],
+                team_name=ai_res["team_name"],
+                text_content=complaint_in.get_description()
             )
 
-        # 4. Intelligent Agent Assignment (evaluating 7 business factors)
-        assigned_agent = assignment_service.select_best_agent(
-            db=db,
-            department_id=dept_id,
-            team_id=team_id,
-            required_skills=[ai_res.get("category", "").lower()]
-        )
-        agent_id = assigned_agent.id if assigned_agent else None
-
-        # Lifecycle Event 6: Assigned to Agent (if found)
-        if assigned_agent:
+            # Lifecycle Event 4: Automatically Routed to Department
             lifecycle_service.transition_status(
                 db=db,
                 complaint=complaint,
-                new_status="ASSIGNED",
+                new_status="ROUTED",
                 actor="AI_ENGINE",
-                description=f"Assigned to {assigned_agent.name}",
-                event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
+                description=f"Routed to {dept_name or ai_res['department_name'] or 'General Triage'} (Automatically routed, Confidence: {ai_confidence:.2f} >= 0.85)",
+                event_metadata={"department_id": dept_id, "department_name": dept_name, "confidence": ai_confidence}
             )
 
-        # 5. SLA Deadline
+            # Lifecycle Event 5: Assigned to Team (if matched)
+            team_label = ai_res.get("team_name")
+            if team_label and team_id:
+                lifecycle_service.record_event(
+                    db=db,
+                    complaint_id=complaint.id,
+                    event_type="TEAM_ASSIGNED",
+                    actor="AI_ENGINE",
+                    description=f"Assigned to {team_label}",
+                    event_metadata={"team_id": team_id, "team_name": team_label}
+                )
+
+            # Intelligent Agent Assignment
+            assigned_agent = assignment_service.select_best_agent(
+                db=db,
+                department_id=dept_id,
+                team_id=team_id,
+                required_skills=[ai_res.get("category", "").lower()]
+            )
+            agent_id = assigned_agent.id if assigned_agent else None
+
+            if assigned_agent:
+                lifecycle_service.transition_status(
+                    db=db,
+                    complaint=complaint,
+                    new_status="ASSIGNED",
+                    actor="AI_ENGINE",
+                    description=f"Assigned to {assigned_agent.name}",
+                    event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
+                )
+
+        elif 0.60 <= ai_confidence < 0.85:
+            # Provisional routing: route to suggested department/team, but flag for human review
+            review_required = True
+            dept_id, team_id, dept_name = routing_service.route_complaint(
+                db=db,
+                department_name=ai_res["department_name"],
+                team_name=ai_res["team_name"],
+                text_content=complaint_in.get_description()
+            )
+
+            lifecycle_service.transition_status(
+                db=db,
+                complaint=complaint,
+                new_status="ROUTED",
+                actor="AI_ENGINE",
+                description=f"Provisional routing to {dept_name or ai_res['department_name']} (Confidence: {ai_confidence:.2f}). Human review required.",
+                event_metadata={"department_id": dept_id, "department_name": dept_name, "confidence": ai_confidence, "review_required": True}
+            )
+
+            team_label = ai_res.get("team_name")
+            if team_label and team_id:
+                lifecycle_service.record_event(
+                    db=db,
+                    complaint_id=complaint.id,
+                    event_type="TEAM_ASSIGNED",
+                    actor="AI_ENGINE",
+                    description=f"Assigned to {team_label} (Provisional)",
+                    event_metadata={"team_id": team_id, "team_name": team_label}
+                )
+
+            assigned_agent = assignment_service.select_best_agent(
+                db=db,
+                department_id=dept_id,
+                team_id=team_id,
+                required_skills=[ai_res.get("category", "").lower()]
+            )
+            agent_id = assigned_agent.id if assigned_agent else None
+
+            if assigned_agent:
+                lifecycle_service.transition_status(
+                    db=db,
+                    complaint=complaint,
+                    new_status="ASSIGNED",
+                    actor="AI_ENGINE",
+                    description=f"Assigned to {assigned_agent.name} (Pending Review)",
+                    event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
+                )
+
+        else:
+            # Low Confidence (< 0.60): Do NOT automatically finalize the department.
+            review_required = True
+            dept_id = None
+            team_id = None
+            agent_id = None
+
+            lifecycle_service.record_event(
+                db=db,
+                complaint_id=complaint.id,
+                event_type="ROUTING_HELD_FOR_REVIEW",
+                actor="AI_ENGINE",
+                description=f"Low confidence ({ai_confidence:.2f} < 0.60). Department not finalized. Human review required.",
+                event_metadata={
+                    "confidence": ai_confidence,
+                    "suggested_category": ai_res.get("category"),
+                    "suggested_department": ai_res.get("department_name")
+                }
+            )
+
+        # 4. SLA Deadline
         sla_deadline = sla_service.calculate_deadline(ai_res["urgency"])
 
-        # 6. Update Complaint with enriched AI analytics
+        # 5. Update Complaint with enriched AI analytics & review flags
         complaint.category = ai_res["category"]
         complaint.sub_category = ai_res["sub_category"]
         complaint.department_id = dept_id
@@ -151,8 +226,10 @@ class ComplaintService:
         complaint.priority_score = ai_res["priority_score"]
         complaint.sentiment = ai_res["sentiment"]
         complaint.emotion = ai_res["emotion"]
-        complaint.ai_confidence = ai_res.get("cat_confidence", 0.90)
-        complaint.review_required = ai_res.get("review_required", False)
+        complaint.ai_confidence = ai_confidence
+        complaint.review_required = review_required
+        complaint.reviewed_by = None
+        complaint.reviewed_at = None
         complaint.ai_status = "COMPLETED"
         complaint.summary = ai_res.get("summary", "")
         complaint.sla_deadline = sla_deadline
@@ -166,17 +243,17 @@ class ComplaintService:
         db.add(ComplaintPrediction(
             complaint_id=complaint.id,
             model_name="AutoTriage-AI-Pipeline",
-            predicted_category=ai_res["category"],
-            category_confidence=ai_res["cat_confidence"],
-            predicted_dept=ai_res["department_name"],
-            dept_confidence=ai_res["cat_confidence"],
-            urgency=ai_res["urgency"],
-            urgency_score=ai_res["urgency_score"],
-            sentiment=ai_res["sentiment"],
-            sentiment_score=ai_res["sentiment_score"],
-            emotion=ai_res["emotion"],
-            emotion_score=ai_res["emotion_score"],
-            execution_time_ms=ai_res["execution_time_ms"]
+            predicted_category=ai_res.get("category", "General"),
+            category_confidence=ai_res.get("cat_confidence", ai_res.get("confidence", 0.90)),
+            predicted_dept=ai_res.get("department_name", "General Support"),
+            dept_confidence=ai_res.get("cat_confidence", ai_res.get("confidence", 0.90)),
+            urgency=ai_res.get("urgency", "MEDIUM"),
+            urgency_score=ai_res.get("urgency_score", 50.0),
+            sentiment=ai_res.get("sentiment", "NEUTRAL"),
+            sentiment_score=ai_res.get("sentiment_score", 0.0),
+            emotion=ai_res.get("emotion", "NEUTRAL"),
+            emotion_score=ai_res.get("emotion_score", 0.85),
+            execution_time_ms=ai_res.get("execution_time_ms", 10.0)
         ))
 
         # 7. Record Entities
@@ -233,6 +310,51 @@ class ComplaintService:
             entity_id=str(complaint.id),
             details={"ticket_number": ticket_num, "urgency": ai_res["urgency"]}
         )
+
+        db.commit()
+        db.refresh(complaint)
+        return complaint
+
+    def review_complaint(
+        self,
+        db: Session,
+        complaint: Complaint,
+        department_id: Optional[int] = None,
+        team_id: Optional[int] = None,
+        assigned_agent_id: Optional[int] = None,
+        reviewer_name: str = "Support Lead",
+        notes: Optional[str] = None
+    ) -> Complaint:
+        """Completes human review for a complaint, updating review_required, reviewed_by, reviewed_at, and department."""
+        complaint.review_required = False
+        complaint.reviewed_by = reviewer_name
+        complaint.reviewed_at = datetime.utcnow()
+
+        if department_id is not None:
+            complaint.department_id = department_id
+        if team_id is not None:
+            complaint.team_id = team_id
+        if assigned_agent_id is not None:
+            complaint.assigned_agent_id = assigned_agent_id
+
+        # If department was unfinalized and is now finalized, transition to ROUTED
+        if complaint.department_id and complaint.status in ("NEW", "AI_ANALYZED"):
+            lifecycle_service.transition_status(
+                db=db,
+                complaint=complaint,
+                new_status="ROUTED",
+                actor=reviewer_name,
+                description=f"Department finalized by {reviewer_name}: {notes or 'Human review approved'}",
+                event_metadata={"department_id": complaint.department_id, "team_id": complaint.team_id}
+            )
+        else:
+            lifecycle_service.record_event(
+                db=db,
+                complaint_id=complaint.id,
+                event_type="HUMAN_REVIEW_COMPLETED",
+                actor=reviewer_name,
+                description=f"Human review completed by {reviewer_name}: {notes or 'Approved'}"
+            )
 
         db.commit()
         db.refresh(complaint)

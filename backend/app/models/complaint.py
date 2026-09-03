@@ -61,6 +61,8 @@ class Complaint(Base):
     priority_score = Column(Float, default=50.0, nullable=False)       # 0.0 to 100.0
     ai_confidence = Column(Float, default=0.90, nullable=False)        # 0.0 to 1.0
     review_required = Column(Boolean, default=False, nullable=False)   # Human review flag
+    reviewed_by = Column(String(255), nullable=True)                   # Human reviewer name / ID
+    reviewed_at = Column(DateTime, nullable=True)                      # Timestamp of human review
     ai_status = Column(String(50), default="COMPLETED", nullable=False) # COMPLETED, PROCESSING, FAILED
     status = Column(String(50), default=ComplaintStatus.NEW.value, index=True, nullable=False)  # Lifecycle Status Enum
     summary = Column(Text, nullable=True)                              # LLM generated concise summary
