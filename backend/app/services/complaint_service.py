@@ -143,6 +143,17 @@ class ComplaintService:
                     description=f"Assigned to {assigned_agent.name}",
                     event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
                 )
+            else:
+                # If no suitable agent exists: Route to the team queue. Do not lose the complaint.
+                team_display = team_label or dept_name or "General"
+                lifecycle_service.record_event(
+                    db=db,
+                    complaint_id=complaint.id,
+                    event_type="ENQUEUED_IN_TEAM_QUEUE",
+                    actor="ASSIGNMENT_ENGINE",
+                    description=f"No suitable agent available matching criteria. Routed to {team_display} queue. Ticket preserved without loss.",
+                    event_metadata={"department_id": dept_id, "team_id": team_id, "queue": f"{team_display} Queue"}
+                )
 
         elif 0.60 <= ai_confidence < 0.85:
             # Provisional routing: route to suggested department/team, but flag for human review
@@ -190,6 +201,16 @@ class ComplaintService:
                     actor="AI_ENGINE",
                     description=f"Assigned to {assigned_agent.name} (Pending Review)",
                     event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
+                )
+            else:
+                team_display = team_label or dept_name or "General"
+                lifecycle_service.record_event(
+                    db=db,
+                    complaint_id=complaint.id,
+                    event_type="ENQUEUED_IN_TEAM_QUEUE",
+                    actor="ASSIGNMENT_ENGINE",
+                    description=f"No suitable agent available matching criteria. Routed to {team_display} queue (Provisional). Ticket preserved without loss.",
+                    event_metadata={"department_id": dept_id, "team_id": team_id, "queue": f"{team_display} Queue"}
                 )
 
         else:
