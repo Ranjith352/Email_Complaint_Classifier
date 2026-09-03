@@ -69,3 +69,32 @@ class Agent(Base):
     full_name = synonym("name")
     is_online = synonym("availability")
     max_active_tickets = synonym("max_workload")
+
+class RoutingRule(Base):
+    """Configurable Database-Stored Routing Rules.
+
+    Allows dynamic routing mappings without hardcoding in React or backend code:
+    Example:
+    - Billing -> Finance
+    - Payment -> Finance / Payments
+    - Refund -> Finance / Refunds
+    - Login -> IT / Application Support
+    - Network -> IT / Network
+    - Security Breach -> Security
+    - Payroll -> HR / Payroll
+    - Leave -> HR / Employee Services
+    - Delivery -> Logistics
+    """
+    __tablename__ = "routing_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trigger_keyword = Column(String(100), unique=True, index=True, nullable=False)
+    department_name = Column(String(100), nullable=False)
+    team_name = Column(String(100), nullable=True)
+    priority_override = Column(String(50), nullable=True)
+    sla_hours = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

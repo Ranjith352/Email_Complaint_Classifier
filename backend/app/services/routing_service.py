@@ -1,8 +1,9 @@
+import re
 import logging
 from typing import Optional, Tuple, List, Dict, Any
 from sqlalchemy.orm import Session
 
-from app.models.organization import Department, Team, Agent
+from app.models.organization import Department, Team, Agent, RoutingRule
 from app.ai.classifier import progressive_classifier
 
 logger = logging.getLogger(__name__)
@@ -262,6 +263,37 @@ class RoutingService:
 
         return best_agent
 
+    @staticmethod
+    def match_configurable_rule(
+        db: Session,
+        text_content: str,
+        category: Optional[str] = None,
+        subcategory: Optional[str] = None
+    ) -> Optional[RoutingRule]:
+        """Matches complaint text or category against configurable rules stored in the database."""
+        try:
+            rules = db.query(RoutingRule).filter(RoutingRule.is_active == True).all()
+            if not rules:
+                return None
+
+            blob = f" {text_content} {category or ''} {subcategory or ''} ".lower()
+
+            # 1. Exact / Word-boundary matching
+            for rule in rules:
+                kw = rule.trigger_keyword.strip().lower()
+                pattern = rf"\b{re.escape(kw)}\b"
+                if re.search(pattern, blob, re.IGNORECASE):
+                    return rule
+
+            # 2. Substring fallback
+            for rule in rules:
+                kw = rule.trigger_keyword.strip().lower()
+                if kw in blob:
+                    return rule
+        except Exception as e:
+            logger.warning(f"Error evaluating configurable routing rules: {e}")
+        return None
+
     # -------------------------------------------------------------------------
     # Master Flow: Complete 8-Stage Routing Pipeline
     # -------------------------------------------------------------------------
@@ -282,6 +314,13 @@ class RoutingService:
 
         # Stage 3: Subcategory
         subcategory = ai_meta["subcategory"]
+
+        # Evaluate Database-Configured Routing Rules
+        rule = self.match_configurable_rule(db, complaint_text, category, subcategory)
+        if rule:
+            ai_meta["department"] = rule.department_name
+            if rule.team_name:
+                ai_meta["team"] = rule.team_name
 
         # Stage 4: Department
         dept = self.resolve_department(db, ai_meta["department"])
@@ -355,6 +394,14 @@ class RoutingService:
         active_depts = db.query(Department).filter(Department.is_active == True).all()
         if not active_depts:
             return None, None, None
+
+        # 0. Check Database Configurable Routing Rules first
+        matched_rule = RoutingService.match_configurable_rule(db, text_content or "", department_name)
+        if matched_rule:
+            rule_dept = RoutingService.resolve_department(db, matched_rule.department_name)
+            if rule_dept:
+                rule_team_id = RoutingService._find_team_id(db, rule_dept.id, matched_rule.team_name or team_name, text_content)
+                return rule_dept.id, rule_team_id, rule_dept.name
 
         # 1. Match by department name if provided
         if department_name:

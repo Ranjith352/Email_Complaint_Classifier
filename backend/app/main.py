@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User
-from app.models.organization import Department, Team, Agent
+from app.models.organization import Department, Team, Agent, RoutingRule
 from app.models.complaint import Complaint
 from app.models.knowledge import KnowledgeDocument
 from app.models.intelligence import ModelVersion
@@ -351,6 +351,24 @@ def seed_enterprise_data():
 
             db.commit()
             logger.info("Seeded fictional demonstration complaints.")
+
+        # 5. Seed Configurable Routing Rules
+        if db.query(RoutingRule).count() == 0:
+            rules_to_seed = [
+                {"trigger_keyword": "Billing", "department_name": "Finance", "team_name": None, "description": "Billing queries -> Finance"},
+                {"trigger_keyword": "Payment", "department_name": "Finance", "team_name": "Payments", "description": "Payment queries -> Finance / Payments"},
+                {"trigger_keyword": "Refund", "department_name": "Finance", "team_name": "Refunds", "description": "Refund requests -> Finance / Refunds"},
+                {"trigger_keyword": "Login", "department_name": "IT", "team_name": "Application Support", "description": "Login queries -> IT / Application Support"},
+                {"trigger_keyword": "Network", "department_name": "IT", "team_name": "Network Team", "description": "Network connectivity -> IT / Network"},
+                {"trigger_keyword": "Security Breach", "department_name": "Security", "team_name": "Incident Response", "priority_override": "CRITICAL", "sla_hours": 2, "description": "Security breaches -> Security"},
+                {"trigger_keyword": "Payroll", "department_name": "HR", "team_name": "Payroll", "description": "Payroll inquiries -> HR / Payroll"},
+                {"trigger_keyword": "Leave", "department_name": "HR", "team_name": "Employee Relations", "description": "Leave requests -> HR / Employee Relations"},
+                {"trigger_keyword": "Delivery", "department_name": "Logistics", "team_name": "Delivery & Tracking", "description": "Delivery issues -> Logistics"}
+            ]
+            for r in rules_to_seed:
+                db.add(RoutingRule(**r))
+            db.commit()
+            logger.info("Seeded enterprise configurable routing rules.")
     except Exception as e:
         logger.error(f"Error during enterprise database seeding: {e}")
     finally:
