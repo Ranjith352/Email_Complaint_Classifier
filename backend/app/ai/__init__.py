@@ -43,7 +43,14 @@ from app.ai.urgency import (
     get_urgency_detector,
     URGENCY_TIERS
 )
-from app.ai.priority import priority_calculator
+from app.ai.priority import (
+    priority_calculator,
+    PriorityEngine,
+    PriorityCalculator,
+    get_priority_engine,
+    DEFAULT_PRIORITY_WEIGHTS,
+    PRIORITY_TIERS
+)
 from app.ai.duplicate_detector import duplicate_detector
 from app.ai.summarizer import summarizer
 from app.ai.rag import rag_engine
@@ -91,6 +98,11 @@ __all__ = [
     "get_urgency_detector",
     "URGENCY_TIERS",
     "priority_calculator",
+    "PriorityEngine",
+    "PriorityCalculator",
+    "get_priority_engine",
+    "DEFAULT_PRIORITY_WEIGHTS",
+    "PRIORITY_TIERS",
     "duplicate_detector",
     "summarizer",
     "rag_engine",
