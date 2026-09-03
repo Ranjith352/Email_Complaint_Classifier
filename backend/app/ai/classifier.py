@@ -688,5 +688,6 @@ def get_classifier(model_tier: str = "baseline") -> BaseClassifier:
         return ProgressiveClassifier()
     return TFIDFLogisticRegressionClassifier()
 
-# Primary singleton export
+# Primary singleton exports
 classifier = ComplaintClassifier()
+progressive_classifier = ProgressiveClassifier()
