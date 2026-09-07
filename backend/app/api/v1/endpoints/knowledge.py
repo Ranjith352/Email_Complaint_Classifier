@@ -213,7 +213,13 @@ def delete_knowledge_document(doc_id: int, db: Session = Depends(get_db)):
 
 @router.post("/query", response_model=RAGQueryResponse)
 async def query_knowledge_rag(req: RAGQueryRequest, db: Session = Depends(get_db)):
-    """Semantic Retrieval over separate embeddings -> Context -> Ollama/Groq Grounded Answer."""
+    """Semantic Retrieval over separate embeddings -> Context -> Ollama/Groq Grounded Answer.
+    Policy Grounding Constraints:
+    - The AI must not invent company policies.
+    - Only use retrieved knowledge when available.
+    - Clearly indicate "Based on company policy..." or "No relevant company policy was found."
+    - Do not present unsupported information as official company policy.
+    """
     chunks = knowledge_service.semantic_retrieve_chunks(
         query=req.question,
         db=db,
@@ -223,7 +229,7 @@ async def query_knowledge_rag(req: RAGQueryRequest, db: Session = Depends(get_db
     )
 
     if not chunks:
-        doc_fallbacks = rag_engine.retrieve_relevant_policies(req.question, db, limit=req.limit, min_similarity=0.25)
+        doc_fallbacks = rag_engine.retrieve_relevant_policies(req.question, db, limit=req.limit, min_similarity=req.min_similarity)
         for d in doc_fallbacks:
             chunks.append({
                 "chunk_id": None,
@@ -235,8 +241,51 @@ async def query_knowledge_rag(req: RAGQueryRequest, db: Session = Depends(get_db
                 "department": d.get("department", "General"),
                 "chunk_index": 0,
                 "chunk_text": d.get("content_snippet", ""),
-                "similarity_score": d.get("similarity", 0.3)
+                "similarity_score": d.get("similarity", req.min_similarity)
             })
+
+    llm = get_llm_provider()
+
+    # Verify substantive topic alignment to avoid presenting unsupported information as official company policy
+    stopwords = {
+        "what", "is", "the", "company", "policy", "for", "and", "regarding", "of",
+        "to", "in", "a", "an", "on", "official", "our", "are", "how", "who", "when",
+        "where", "does", "do", "we", "have", "any", "about", "with", "from", "by",
+        "at", "this", "that", "these", "those", "can", "should", "would", "could",
+        "please", "tell", "me", "give", "rules", "guidelines", "invent", "new",
+        "granting", "employees", "employee", "customer", "customers", "user", "users"
+    }
+    import re
+    # Check for direct attempts to invent or fabricate policies
+    if re.search(r"\b(invent|fabricate|make up|hallucinate)\b", req.question.lower()):
+        return RAGQueryResponse(
+            question=req.question,
+            answer="No relevant company policy was found.",
+            grounded=False,
+            cited_chunks=[],
+            provider=llm.provider_name,
+            confidence_score=0.0
+        )
+
+    query_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", req.question.lower())) - stopwords
+    has_topic_match = True
+    if query_words and chunks:
+        combined_corpus = " ".join([f"{c['document_title']} {c['chunk_text']}" for c in chunks]).lower()
+        has_topic_match = any(
+            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 5 and w[:4] in combined_corpus)
+            for w in query_words
+        )
+
+    # If no relevant policy chunks were retrieved or no substantive topic matches exist
+    if not chunks or not has_topic_match:
+        return RAGQueryResponse(
+            question=req.question,
+            answer="No relevant company policy was found.",
+            grounded=False,
+            cited_chunks=[],
+            provider=llm.provider_name,
+            confidence_score=0.0
+        )
 
     context_blocks = []
     for c in chunks:
@@ -246,34 +295,60 @@ async def query_knowledge_rag(req: RAGQueryRequest, db: Session = Depends(get_db
         )
     context_str = "\n\n".join(context_blocks)
 
-    llm = get_llm_provider()
     system_prompt = (
-        "You are the official Enterprise Knowledge Base Assistant for AutoTriage AI. "
-        "Answer the user's inquiry based STRICTLY and ONLY on the retrieved official company documents below. "
-        "Cite the document name, department, and specific policy rules (such as refund timelines, SLA hours, or diagnostic steps). "
-        "If the query cannot be answered from the provided documents, state clearly: "
-        "'Based on the official company knowledge base, no policy covers this request.' "
-        "DO NOT hallucinate or assume facts not present in the context."
+        "You are the official Enterprise Knowledge Base Assistant for AutoTriage AI.\n"
+        "CRITICAL ANTI-HALLUCINATION & POLICY GROUNDING RULES:\n"
+        "1. The AI must NOT invent company policies under any circumstances.\n"
+        "2. For policy questions, ONLY use retrieved knowledge when available.\n"
+        "3. Do NOT present unsupported information as official company policy.\n"
+        "4. If the retrieved context contains relevant policy rules answering the inquiry, clearly indicate and begin your response with: "
+        "\"Based on company policy...\"\n"
+        "5. If the retrieved context does NOT contain relevant information answering the inquiry, you MUST respond EXACTLY with: "
+        "\"No relevant company policy was found.\""
     )
     user_prompt = (
-        f"Retrieved Company Policy Context:\n{context_str or 'No relevant policy documents found.'}\n\n"
+        f"Retrieved Company Policy Context:\n{context_str}\n\n"
         f"User Inquiry:\n{req.question}"
     )
 
     grounded_answer = await llm.generate_chat(system_prompt, user_prompt)
-    if not grounded_answer:
-        if chunks:
-            grounded_answer = f"Based on our official '{chunks[0]['document_title']}' ({chunks[0].get('department', 'General')}):\n{chunks[0]['chunk_text'][:350]}..."
-        else:
-            grounded_answer = "Based on the official company knowledge base, no policy covers this request."
+    is_grounded = True
 
-    cited = [CitedChunk(**c) for c in chunks]
-    confidence = chunks[0]["similarity_score"] if chunks else 0.0
+    if grounded_answer:
+        ans_clean = grounded_answer.strip()
+        neg_indicators = [
+            "no relevant company policy was found",
+            "no company policy was found",
+            "no policy was found",
+            "no policy covers",
+            "no relevant policy",
+            "not found in the official",
+            "unsupported by official company policy",
+            "no relevant official"
+        ]
+        if any(neg in ans_clean.lower() for neg in neg_indicators):
+            grounded_answer = "No relevant company policy was found."
+            is_grounded = False
+        else:
+            if not re.match(r"^based on (our |the |official )?company policy", ans_clean, re.IGNORECASE):
+                grounded_answer = f"Based on company policy, {ans_clean}"
+            else:
+                grounded_answer = ans_clean
+    else:
+        if chunks:
+            grounded_answer = f"Based on company policy [{chunks[0]['document_title']}]: {chunks[0]['chunk_text'][:350]}..."
+            is_grounded = True
+        else:
+            grounded_answer = "No relevant company policy was found."
+            is_grounded = False
+
+    cited = [CitedChunk(**c) for c in chunks] if is_grounded else []
+    confidence = chunks[0]["similarity_score"] if (chunks and is_grounded) else 0.0
 
     return RAGQueryResponse(
         question=req.question,
         answer=grounded_answer.strip(),
-        grounded=bool(chunks),
+        grounded=is_grounded,
         cited_chunks=cited,
         provider=llm.provider_name,
         confidence_score=confidence

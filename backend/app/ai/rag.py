@@ -26,14 +26,26 @@ class RAGEngine:
             if doc.embedding:
                 best_sim = embeddings_engine.cosine_similarity(query_vector, doc.embedding)
 
-            # Check granular chunks for higher precision semantic match
-            chunks = db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == doc.id).all()
-            for chunk in chunks:
-                if chunk.embedding:
-                    c_sim = embeddings_engine.cosine_similarity(query_vector, chunk.embedding)
+            # Check granular chunks and separate ChunkEmbedding records for higher precision semantic match
+            from app.models.knowledge import ChunkEmbedding
+            chunk_embs = db.query(ChunkEmbedding, KnowledgeChunk).join(
+                KnowledgeChunk, ChunkEmbedding.chunk_id == KnowledgeChunk.id
+            ).filter(ChunkEmbedding.document_id == doc.id).all()
+            for c_emb, c_chunk in chunk_embs:
+                if c_emb.embedding:
+                    c_sim = embeddings_engine.cosine_similarity(query_vector, c_emb.embedding)
                     if c_sim > best_sim:
                         best_sim = c_sim
-                        best_snippet = chunk.chunk_text
+                        best_snippet = c_chunk.chunk_text
+
+            if not chunk_embs:
+                chunks = db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == doc.id).all()
+                for chunk in chunks:
+                    if chunk.embedding:
+                        c_sim = embeddings_engine.cosine_similarity(query_vector, chunk.embedding)
+                        if c_sim > best_sim:
+                            best_sim = c_sim
+                            best_snippet = chunk.chunk_text
 
             if best_sim >= min_similarity:
                 scored.append({
@@ -129,32 +141,115 @@ class RAGEngine:
         db: Session,
         limit: int = 3
     ) -> Dict[str, Any]:
-        """4. RAG question answering: answers user/agent questions strictly grounded on retrieved company documents."""
-        relevant_docs = cls.retrieve_relevant_policies(question, db, limit=limit)
+        """4. RAG question answering: answers user/agent questions strictly grounded on retrieved company documents.
+        Policy Grounding Constraints:
+        - The AI must not invent company policies.
+        - Only use retrieved knowledge when available.
+        - Clearly indicate "Based on company policy..." or "No relevant company policy was found."
+        - Do not present unsupported information as official company policy.
+        """
+        relevant_docs = cls.retrieve_relevant_policies(question, db, limit=limit, min_similarity=0.30)
+        llm = get_llm_provider()
+
+        # If no relevant policy documents are retrieved
+        if not relevant_docs:
+            return {
+                "answer": "No relevant company policy was found.",
+                "cited_documents": [],
+                "provider": "Policy Grounding Engine",
+                "grounded": False
+            }
+
+        # Verify substantive topic alignment to prevent presenting unrelated documents as official company policy
+        stopwords = {
+            "what", "is", "the", "company", "policy", "for", "and", "regarding", "of",
+            "to", "in", "a", "an", "on", "official", "our", "are", "how", "who", "when",
+            "where", "does", "do", "we", "have", "any", "about", "with", "from", "by",
+            "at", "this", "that", "these", "those", "can", "should", "would", "could",
+            "please", "tell", "me", "give", "rules", "guidelines", "invent", "new",
+            "granting", "employees", "employee", "customer", "customers", "user", "users"
+        }
+        import re
+        if re.search(r"\b(invent|fabricate|make up|hallucinate)\b", question.lower()):
+            return {
+                "answer": "No relevant company policy was found.",
+                "cited_documents": [],
+                "provider": "Policy Grounding Engine",
+                "grounded": False
+            }
+
+        query_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", question.lower())) - stopwords
+        if query_words and relevant_docs:
+            combined_corpus = " ".join([f"{d['title']} {d['content_snippet']}" for d in relevant_docs]).lower()
+            has_topic_match = any(
+                re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 5 and w[:4] in combined_corpus)
+                for w in query_words
+            )
+            if not has_topic_match:
+                return {
+                    "answer": "No relevant company policy was found.",
+                    "cited_documents": [],
+                    "provider": "Policy Grounding Engine",
+                    "grounded": False
+                }
+
         context_str = "\n\n".join([
-            f"Document [{d['title']}] ({d['document_type']}):\n{d['content_snippet']}"
+            f"Document [{d['title']}] ({d['document_type']}) [Dept: {d.get('department', 'General')} | Similarity: {d['similarity']}]:\n{d['content_snippet']}"
             for d in relevant_docs
         ])
 
-        llm = get_llm_provider()
         system_prompt = (
-            "You are an expert enterprise policy copilot. Answer the question using ONLY the retrieved company "
-            "knowledge base documents below. If the information is not present, state clearly that no policy covers it.\n\n"
-            f"--- COMPANY KNOWLEDGE BASE ---\n{context_str}\n------------------------------\n"
+            "You are an expert enterprise policy copilot for AutoTriage AI.\n"
+            "CRITICAL ANTI-HALLUCINATION & POLICY GROUNDING RULES:\n"
+            "1. The AI must NOT invent company policies under any circumstances.\n"
+            "2. For policy questions, ONLY use retrieved knowledge when available.\n"
+            "3. Do NOT present unsupported information as official company policy.\n"
+            "4. If the retrieved context contains relevant policy rules answering the question, clearly indicate and begin your response with: "
+            "\"Based on company policy...\"\n"
+            "5. If the retrieved context does NOT contain relevant information answering the question, you MUST respond EXACTLY with: "
+            "\"No relevant company policy was found.\""
         )
-        user_prompt = f"Question: {question}"
+        user_prompt = (
+            f"Retrieved Company Policy Context:\n{context_str}\n\n"
+            f"Question:\n{question}"
+        )
 
         reply = await llm.generate_chat(system_prompt, user_prompt)
-        if not reply:
-            reply = (
-                f"Guidance from company records:\n\n"
-                + (relevant_docs[0]["content_snippet"] if relevant_docs else "No specific policy document matches this query.")
-            )
+        grounded = True
+
+        if reply:
+            reply_clean = reply.strip()
+            neg_indicators = [
+                "no relevant company policy was found",
+                "no company policy was found",
+                "no policy was found",
+                "no policy covers",
+                "no relevant policy",
+                "not found in",
+                "unsupported by"
+            ]
+            if any(ind in reply_clean.lower() for ind in neg_indicators):
+                reply = "No relevant company policy was found."
+                grounded = False
+            else:
+                import re
+                if not re.match(r"^based on (our |the |official )?company policy", reply_clean, re.IGNORECASE):
+                    reply = f"Based on company policy, {reply_clean}"
+                else:
+                    reply = reply_clean
+        else:
+            if relevant_docs:
+                reply = f"Based on company policy [{relevant_docs[0]['title']}]: {relevant_docs[0]['content_snippet'][:300]}..."
+                grounded = True
+            else:
+                reply = "No relevant company policy was found."
+                grounded = False
 
         return {
             "answer": reply,
-            "cited_documents": relevant_docs,
-            "provider": llm.provider_name
+            "cited_documents": relevant_docs if grounded else [],
+            "provider": llm.provider_name,
+            "grounded": grounded
         }
 
     @classmethod

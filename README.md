@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-126%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-131%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -303,6 +303,18 @@ Enterprise knowledge base administration provides full lifecycle control over op
   ```
   Decoupling `chunk_embeddings` from `knowledge_chunks` allows vector re-indexing without altering raw text or chunk segmentation, supports model migrations without schema rewrites, and maintains clean database normalization.
 
+#### 5. Strict Anti-Hallucination & Policy Grounding Guardrails
+To prevent AI hallucination and protect corporate liability, strict grounding constraints are enforced across all policy endpoints (`/api/knowledge/query`, `/api/ai/chat`, `/api/ai/rag-query`):
+- **Never Invent Policies**: The AI must not invent, speculate, or fabricate company policies under any circumstance.
+- **Retrieved Knowledge Only**: Policy answers rely exclusively on retrieved and verified chunks from official company documents.
+- **Mandatory Clear Indicator Phrasing**:
+  - Grounded policy answer: Clearly indicates and begins with:
+    > `"Based on company policy..."`
+  - Unretrieved, ungrounded, or out-of-scope inquiry: Clearly indicates and responds with:
+    > `"No relevant company policy was found."`
+- **Substantive Topic Verification**: Stopword-filtered keyword matching ensures that spurious cosine similarities (e.g. from generic conversational syntax) cannot trigger policy citations for ungrounded or out-of-domain queries (e.g., speculative starship parking regulations or malicious policy invention requests).
+- **Zero Unsupported Exposure**: Unsupported information is never presented as official company policy; out-of-domain and invention attempts are rejected with `grounded=False` and `cited_chunks=[]`.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -315,7 +327,7 @@ Enterprise knowledge base administration provides full lifecycle control over op
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (126 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (131 passing automated tests) |
 
 
 ---

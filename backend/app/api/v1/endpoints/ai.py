@@ -33,26 +33,89 @@ async def analyze_text(req: AnalyzeRequest, db: Session = Depends(get_db)):
 
 @router.post("/chat")
 async def ai_assistant_chat(req: AssistantChatRequest, db: Session = Depends(get_db)):
-    """Internal AI Assistant that assists human support agents with policy lookups and procedure guidance."""
+    """Internal AI Assistant that assists human support agents with policy lookups and procedure guidance.
+    Policy Grounding Constraints:
+    - The AI must not invent company policies.
+    - Only use retrieved knowledge when available.
+    - Clearly indicate "Based on company policy..." or "No relevant company policy was found."
+    - Do not present unsupported information as official company policy.
+    """
     # Retrieve relevant SOPs & policies via RAG
-    relevant_docs = rag_engine.retrieve_relevant_policies(req.message, db, limit=3)
-    context_str = "\n\n".join([f"[{d['title']}]: {d['content_snippet']}" for d in relevant_docs])
-
+    relevant_docs = rag_engine.retrieve_relevant_policies(req.message, db, limit=3, min_similarity=0.30)
     llm = get_llm_provider()
+
+    is_policy_inquiry = any(kw in req.message.lower() for kw in ["policy", "refund", "sla", "rule", "procedure", "sop", "guideline", "reimbursement", "escalat"])
+
+    # Verify substantive topic alignment
+    stopwords = {
+        "what", "is", "the", "company", "policy", "for", "and", "regarding", "of",
+        "to", "in", "a", "an", "on", "official", "our", "are", "how", "who", "when",
+        "where", "does", "do", "we", "have", "any", "about", "with", "from", "by",
+        "at", "this", "that", "these", "those", "can", "should", "would", "could",
+        "please", "tell", "me", "give", "rules", "guidelines", "invent", "new",
+        "granting", "employees", "employee", "customer", "customers", "user", "users"
+    }
+    import re
+    is_invention_request = bool(re.search(r"\b(invent|fabricate|make up|hallucinate)\b", req.message.lower()))
+    query_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", req.message.lower())) - stopwords
+    has_topic_match = True
+    if query_words and relevant_docs:
+        combined_corpus = " ".join([f"{d['title']} {d['content_snippet']}" for d in relevant_docs]).lower()
+        has_topic_match = any(
+            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 5 and w[:4] in combined_corpus)
+            for w in query_words
+        )
+
+    if is_invention_request or (is_policy_inquiry and (not relevant_docs or not has_topic_match)):
+        return {
+            "reply": "No relevant company policy was found.",
+            "cited_documents": [],
+            "provider": llm.provider_name
+        }
+
+    context_str = "\n\n".join([f"[{d['title']}] ({d['document_type']}): {d['content_snippet']}" for d in relevant_docs])
+
     system_prompt = (
-        "You are AutoTriage Assistant, an internal AI copilot assisting enterprise customer support agents. "
-        "Answer questions about company policies, department routing, refund rules, and ticket workflows "
-        "using the retrieved knowledge base documents below.\n\n"
-        f"--- COMPANY KNOWLEDGE BASE ---\n{context_str}\n------------------------------\n"
+        "You are AutoTriage Assistant, an internal AI copilot assisting enterprise customer support agents.\n"
+        "CRITICAL ANTI-HALLUCINATION & POLICY GROUNDING RULES:\n"
+        "1. The AI must NOT invent company policies under any circumstances.\n"
+        "2. For policy questions, ONLY use retrieved knowledge when available.\n"
+        "3. Do NOT present unsupported information as official company policy.\n"
+        "4. If the retrieved context contains relevant policy rules answering the question, clearly indicate and begin your response with: "
+        "\"Based on company policy...\"\n"
+        "5. If the retrieved context does NOT contain relevant information answering the question, you MUST respond EXACTLY with: "
+        "\"No relevant company policy was found.\""
     )
-    user_prompt = req.message
+    user_prompt = (
+        f"Retrieved Company Policy Context:\n{context_str or 'No relevant policy documents found.'}\n\n"
+        f"Agent Question:\n{req.message}"
+    )
 
     reply = await llm.generate_chat(system_prompt, user_prompt)
-    if not reply:
-        reply = (
-            f"Here is the relevant guidance from our company knowledge base:\n\n"
-            + (relevant_docs[0]["content_snippet"] if relevant_docs else "No specific policy document found for this inquiry.")
-        )
+    if reply:
+        reply_clean = reply.strip()
+        neg_indicators = [
+            "no relevant company policy was found",
+            "no company policy was found",
+            "no policy was found",
+            "no policy covers",
+            "no relevant policy",
+            "not found in"
+        ]
+        if any(ind in reply_clean.lower() for ind in neg_indicators):
+            reply = "No relevant company policy was found."
+            relevant_docs = []
+        elif is_policy_inquiry and relevant_docs:
+            import re
+            if not re.match(r"^based on (our |the |official )?company policy", reply_clean, re.IGNORECASE):
+                reply = f"Based on company policy, {reply_clean}"
+            else:
+                reply = reply_clean
+    else:
+        if relevant_docs:
+            reply = f"Based on company policy [{relevant_docs[0]['title']}]: {relevant_docs[0]['content_snippet'][:300]}..."
+        else:
+            reply = "No relevant company policy was found."
 
     return {
         "reply": reply,

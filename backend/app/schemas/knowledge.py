@@ -95,7 +95,7 @@ class RAGQueryRequest(BaseModel):
     category: Optional[str] = None
     document_type: Optional[str] = None
     limit: int = 4
-    min_similarity: float = 0.35
+    min_similarity: float = 0.30
 
 class CitedChunk(BaseModel):
     chunk_id: Optional[int] = None

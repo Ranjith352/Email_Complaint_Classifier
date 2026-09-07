@@ -30,7 +30,8 @@ SEMANTIC_CONCEPT_CLUSTERS: Dict[str, Dict[str, Any]] = {
             "charged", "charge", "charges", "charging", "debited", "debit", "debits",
             "paid", "pay", "payment", "payments", "transaction", "transactions",
             "billed", "billing", "bill", "bills", "fee", "fees", "cost", "amount",
-            "rupees", "inr", "usd", "dollars", "bank", "card", "statement", "account"
+            "rupees", "inr", "usd", "dollars", "bank", "card", "statement", "account",
+            "finance", "financial", "authorization", "fiscal", "matrix"
         ]
     },
     "MULTIPLICITY_DUPLICATE": {
@@ -104,6 +105,15 @@ SEMANTIC_CONCEPT_CLUSTERS: Dict[str, Dict[str, Any]] = {
         "terms": [
             "salary", "payroll", "payslip", "leave", "vacation", "sick leave",
             "employee", "workplace", "hr", "benefits", "tax deduction", "bonus"
+        ]
+    },
+    "SLA_OPERATIONS_POLICY": {
+        "base_idx": 285,
+        "span": 40,
+        "weight": 3.5,
+        "terms": [
+            "sla", "service level", "resolution hours", "response time", "p1", "critical",
+            "p2", "p3", "p4", "deadline", "escalation", "hours", "target time", "target hours"
         ]
     }
 }
