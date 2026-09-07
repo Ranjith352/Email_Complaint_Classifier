@@ -64,13 +64,19 @@ class LLMProvider(ABC):
                     return {
                         "summary": data["summary"].strip(),
                         "key_points": data.get("key_points", []),
-                        "provider": self.provider_name
+                        "provider": self.provider_name,
+                        "status": "generated",
+                        "error": None
                     }
             except Exception as e:
                 logger.warning(f"Error parsing LLM summary response from {self.provider_name}: {e}")
 
-        # Intelligent deterministic fallback when provider offline / test mode
-        return self._deterministic_fallback_summary(text, subject)
+        # Intelligent deterministic fallback when provider offline / model unavailable / test mode
+        fallback = self._deterministic_fallback_summary(text, subject)
+        fallback["status"] = "fallback"
+        fallback["error"] = getattr(self, "last_error", None)
+        fallback["download_url"] = getattr(self, "DOWNLOAD_URL", "https://ollama.com/download")
+        return fallback
 
     def _deterministic_fallback_summary(self, text: str, subject: Optional[str] = None) -> Dict[str, Any]:
         """Intelligently extracts core issue, currency amounts, timing, and customer requested resolution."""
@@ -134,7 +140,7 @@ class LLMProvider(ABC):
         }
 
 
-def get_llm_provider(provider_type: Optional[str] = None) -> LLMProvider:
+def get_llm_provider(provider_type: Optional[str] = None, model: Optional[str] = None) -> LLMProvider:
     """Returns configured LLM provider instance based on LLM_PROVIDER ('ollama' or 'groq').
     The rest of the application interacts strictly through the LLMProvider interface.
     """
@@ -146,7 +152,7 @@ def get_llm_provider(provider_type: Optional[str] = None) -> LLMProvider:
     if target == "groq":
         return GroqProvider()
     elif target == "ollama":
-        return OllamaProvider()
+        return OllamaProvider(model=model)
     else:
         logger.warning(f"Unrecognized LLM_PROVIDER '{target}', defaulting to OllamaProvider")
-        return OllamaProvider()
+        return OllamaProvider(model=model)

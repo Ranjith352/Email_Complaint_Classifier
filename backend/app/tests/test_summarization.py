@@ -141,3 +141,128 @@ def test_summarize_api_endpoint(client: TestClient, db: Session):
     assert get_res.status_code == 200
     get_data = get_res.json()
     assert get_data["summary"] == data["summary"]
+
+def test_ollama_default_configuration_and_model_configuration():
+    """Verifies:
+    1. Ollama is the default local LLM.
+    2. Default base URL is http://localhost:11434.
+    3. Does not assume a model is pre-installed.
+    4. Allows the user to configure the model.
+    """
+    from app.core.config import settings
+    assert settings.LLM_PROVIDER == "ollama"
+    assert "http://localhost:11434" in settings.OLLAMA_BASE_URL
+
+    # Test that OllamaProvider allows model configuration
+    provider = OllamaProvider()
+    assert provider.base_url == "http://localhost:11434"
+
+    # Dynamic user configuration
+    provider.set_model("llama3")
+    assert provider.model == "llama3"
+    assert "llama3" in provider.provider_name
+
+    provider.set_model("mistral")
+    assert provider.model == "mistral"
+    assert "mistral" in provider.provider_name
+
+    # Factory instantiation with explicit model override
+    custom_provider = get_llm_provider("ollama", model="qwen2.5")
+    assert custom_provider.model == "qwen2.5"
+
+@pytest.mark.asyncio
+async def test_ollama_unavailable_model_clear_error_and_no_crash():
+    """Verifies:
+    If the model is unavailable:
+    - Return a clear error.
+    - Do not crash the entire application.
+    - Provides official download link https://ollama.com/download.
+    """
+    # 1. Unconfigured model scenario
+    empty_provider = OllamaProvider(model="")
+    health = await empty_provider.check_availability()
+    assert health["available"] is False
+    assert "No Ollama model is configured" in health["error"]
+    assert "https://ollama.com/download" in health["download_url"]
+
+    # generate_chat should not crash and return None with clear warning
+    chat_res = await empty_provider.generate_chat("System", "User")
+    assert chat_res is None
+    assert "No Ollama model configured" in empty_provider.last_error
+
+    # summarize should not crash, returns clear fallback and error metadata
+    summ_res = await empty_provider.summarize(
+        text="Customer reports a duplicate payment of ₹5,000 today and requests an immediate refund.",
+        subject="Duplicate charge"
+    )
+    assert summ_res["status"] == "fallback"
+    assert summ_res["error"] is not None
+    assert "5,000" in summ_res["summary"]
+    assert "https://ollama.com/download" in summ_res["download_url"]
+
+    # 2. Unavailable server scenario (pointing to non-existent port)
+    unreachable_provider = OllamaProvider(model="llama3", base_url="http://127.0.0.1:59999")
+    unreach_health = await unreachable_provider.check_availability()
+    assert unreach_health["available"] is False
+    assert "Cannot connect to local Ollama service" in unreach_health["error"]
+    assert "https://ollama.com/download" in unreach_health["download_url"]
+
+    # Must not crash when querying unavailable endpoint
+    unreach_chat = await unreachable_provider.generate_chat("System", "User")
+    assert unreach_chat is None
+    assert "not reachable" in unreachable_provider.last_error
+
+@pytest.mark.asyncio
+async def test_application_continues_when_model_unavailable(db: Session):
+    """Verifies that other functionality continues smoothly without crashing
+    even if the local Ollama model is completely unavailable.
+    """
+    from app.ai.ai_orchestrator import ai_orchestrator
+
+    # Even if Ollama is offline or unconfigured, full complaint processing proceeds
+    res = await ai_orchestrator.process_complaint_full(
+        subject="Portal access failure",
+        body="I cannot login to my account on the web portal since this morning. Please unlock my credentials.",
+        customer_name="Test Customer",
+        ticket_number="CONT-001",
+        db=db
+    )
+
+    # Core AI functionality succeeded
+    assert res["language"] == "en"
+    assert res["sentiment"] in ["NEGATIVE", "POSITIVE", "NEUTRAL"]
+    assert res["emotion"] in ["ANGER", "FRUSTRATION", "FEAR", "SADNESS", "NEUTRAL", "SATISFACTION"]
+    assert res["urgency"] in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    assert res["priority_score"] >= 0
+    assert res["confidence"] > 0
+    assert res["embedding"] is not None
+    assert res["summary"] is not None
+
+def test_llm_management_api_endpoints(client: TestClient):
+    """Verifies REST endpoints for LLM status, models listing, and runtime configuration."""
+    # 1. GET /api/ai/llm/status
+    status_res = client.get("/api/ai/llm/status")
+    assert status_res.status_code == 200
+    status_data = status_res.json()
+    assert "active_provider" in status_data
+    assert "download_url" in status_data
+    assert "https://ollama.com/download" in status_data["download_url"]
+
+    # 2. GET /api/ai/llm/models
+    models_res = client.get("/api/ai/llm/models")
+    assert models_res.status_code == 200
+    models_data = models_res.json()
+    assert "installed_models" in models_data
+    assert "https://ollama.com/download" in models_data["download_url"]
+
+    # 3. POST /api/ai/llm/config
+    config_res = client.post("/api/ai/llm/config", json={
+        "provider": "ollama",
+        "ollama_model": "llama3",
+        "ollama_base_url": "http://localhost:11434"
+    })
+    assert config_res.status_code == 200
+    config_data = config_res.json()
+    assert config_data["configuration"]["OLLAMA_MODEL"] == "llama3"
+    assert config_data["configuration"]["OLLAMA_BASE_URL"] == "http://localhost:11434"
+

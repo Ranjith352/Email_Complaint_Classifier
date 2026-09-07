@@ -477,6 +477,7 @@ def find_similar_to_complaint(
 async def summarize_complaint(
     complaint_id: int,
     provider: Optional[str] = Query(None, description="Optional LLM provider preference: 'ollama' or 'groq'"),
+    model: Optional[str] = Query(None, description="Optional model name override for the LLM provider"),
     db: Session = Depends(get_db)
 ):
     """Summarizes complaint using Ollama/Groq (or configured LLMProvider) and persists the summary."""
@@ -484,7 +485,8 @@ async def summarize_complaint(
         return await complaint_service.summarize_and_store_complaint(
             db=db,
             complaint_id=complaint_id,
-            provider=provider
+            provider=provider,
+            model=model
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

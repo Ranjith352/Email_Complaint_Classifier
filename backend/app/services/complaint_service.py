@@ -556,7 +556,8 @@ class ComplaintService:
     async def summarize_and_store_complaint(
         db: Session,
         complaint_id: int,
-        provider: Optional[str] = None
+        provider: Optional[str] = None,
+        model: Optional[str] = None
     ) -> Dict[str, Any]:
         """Summarizes an incoming complaint using Ollama/Groq and persists the summary."""
         complaint = complaint_repository.get_by_id(db, complaint_id)
@@ -569,7 +570,8 @@ class ComplaintService:
         summary_res = await summarizer.summarize(
             subject=subject,
             body=full_text,
-            provider_preference=provider
+            provider_preference=provider,
+            model_preference=model
         )
 
         # Store summary in complaint record
@@ -617,6 +619,9 @@ class ComplaintService:
             "summary": complaint.summary,
             "key_points": summary_res.get("key_points", []),
             "provider": summary_res.get("provider"),
+            "status": summary_res.get("status", "success"),
+            "error": summary_res.get("error"),
+            "download_url": summary_res.get("download_url", "https://ollama.com/download"),
             "stored": True
         }
 

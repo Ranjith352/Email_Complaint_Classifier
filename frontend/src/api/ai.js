@@ -14,10 +14,26 @@ export const chatWithAssistant = async (message) => {
   return res.data;
 };
 
-export const summarizeComplaint = async (id, provider = null) => {
-  const res = await apiClient.post(`/complaints/${id}/summarize`, null, {
-    params: provider ? { provider } : {}
-  });
+export const summarizeComplaint = async (id, provider = null, model = null) => {
+  const params = {};
+  if (provider) params.provider = provider;
+  if (model) params.model = model;
+  const res = await apiClient.post(`/complaints/${id}/summarize`, null, { params });
+  return res.data;
+};
+
+export const getLLMStatus = async () => {
+  const res = await apiClient.get('/ai/llm/status');
+  return res.data;
+};
+
+export const configureLLM = async (config) => {
+  const res = await apiClient.post('/ai/llm/config', config);
+  return res.data;
+};
+
+export const getOllamaModels = async () => {
+  const res = await apiClient.get('/ai/llm/models');
   return res.data;
 };
 

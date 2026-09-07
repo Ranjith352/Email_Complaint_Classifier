@@ -63,3 +63,74 @@ async def ai_assistant_chat(req: AssistantChatRequest, db: Session = Depends(get
 @router.get("/models")
 def get_model_versions(db: Session = Depends(get_db)):
     return db.query(ModelVersion).all()
+
+
+class LLMConfigRequest(BaseModel):
+    provider: Optional[str] = None
+    ollama_model: Optional[str] = None
+    ollama_base_url: Optional[str] = None
+
+
+@router.get("/llm/status")
+async def get_llm_status():
+    """Checks LLM provider connectivity and local Ollama model installation without crashing."""
+    from app.core.config import settings
+    provider = get_llm_provider()
+    if hasattr(provider, "check_availability"):
+        status = await provider.check_availability()
+    else:
+        status = {
+            "available": provider.is_available,
+            "error": None,
+            "download_url": "https://ollama.com/download"
+        }
+    status["active_provider"] = provider.provider_name
+    status["configured_llm_provider"] = settings.LLM_PROVIDER
+    status["configured_ollama_base_url"] = settings.OLLAMA_BASE_URL
+    status["configured_ollama_model"] = settings.OLLAMA_MODEL or "(none)"
+    return status
+
+
+@router.post("/llm/config")
+async def configure_llm(req: LLMConfigRequest):
+    """Allows user to configure LLM provider, Ollama model, or Ollama base URL at runtime."""
+    from app.core.config import settings
+    if req.provider:
+        settings.LLM_PROVIDER = req.provider.strip().lower()
+    if req.ollama_model is not None:
+        settings.OLLAMA_MODEL = req.ollama_model.strip()
+    if req.ollama_base_url:
+        settings.OLLAMA_BASE_URL = req.ollama_base_url.strip()
+
+    provider = get_llm_provider()
+    status = await provider.check_availability() if hasattr(provider, "check_availability") else {"available": provider.is_available}
+    return {
+        "message": "LLM configuration updated successfully.",
+        "configuration": {
+            "LLM_PROVIDER": settings.LLM_PROVIDER,
+            "OLLAMA_BASE_URL": settings.OLLAMA_BASE_URL,
+            "OLLAMA_MODEL": settings.OLLAMA_MODEL,
+        },
+        "status": status
+    }
+
+
+@router.get("/llm/models")
+async def list_ollama_models():
+    """Lists models installed in local Ollama daemon or returns clear installation instructions."""
+    from app.ai.ollama_provider import OllamaProvider, OLLAMA_DOWNLOAD_URL
+    from app.core.config import settings
+    provider = OllamaProvider()
+    installed = await provider.get_installed_models()
+    return {
+        "installed_models": installed,
+        "configured_model": settings.OLLAMA_MODEL or None,
+        "online": len(installed) > 0,
+        "download_url": OLLAMA_DOWNLOAD_URL,
+        "instructions": [
+            f"1. Download and install Ollama from {OLLAMA_DOWNLOAD_URL}",
+            f"2. Launch Ollama daemon (runs on {settings.OLLAMA_BASE_URL})",
+            "3. Run 'ollama pull llama3' (or any model) in your terminal",
+            "4. Configure OLLAMA_MODEL=llama3 via POST /api/ai/llm/config or in your .env file"
+        ]
+    }

@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-105%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-109%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -133,24 +133,21 @@ When assigning human agents:
   - Prominent real-time incident alert cards surfaced to managers in the Executive Triage Command Center.
   - Provides instant root cause context, sample complaint quotations, and one-click **Acknowledge Incident** and **Resolve Incident** workflows.
 
-### 14. Pluggable `LLMProvider` Architecture & Provider Decoupling
-- **Decoupled Provider Interface**: Abstract base class `LLMProvider` completely decouples the application from vendor-specific LLM implementations:
-  ```python
-  class LLMProvider(ABC):
-      @abstractmethod
-      def generate_chat(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]: ...
-      @abstractmethod
-      def summarize(self, text: str, max_words: int = 60, **kwargs) -> str: ...
-  ```
-- **Concrete Implementations**:
-  - `OllamaProvider`: Local offline inference using Ollama (`llama3`).
-  - `GroqProvider`: Ultra-fast cloud inference using Groq API (`llama-3.3-70b-versatile`).
-- **Configuration Switch**:
-  Configured simply via `.env`:
+### 14. Pluggable `LLMProvider` Architecture & Default Local Ollama
+- **Default Local LLM**: Ollama is configured as the default local LLM (`LLM_PROVIDER=ollama`).
+- **Configuration**:
   ```env
-  LLM_PROVIDER=ollama   # or LLM_PROVIDER=groq
+  LLM_PROVIDER=ollama
+  OLLAMA_BASE_URL=http://localhost:11434
+  OLLAMA_MODEL=
   ```
-- **Complete Vendor Independence**: The rest of the application (AI Orchestrator, RAG resolution engine, Summarizer, Complaint Service, and REST endpoints) never references vendor APIs directly; it interacts solely through `get_llm_provider()` and the `LLMProvider` interface.
+- **Do Not Assume a Model is Installed**: `OLLAMA_MODEL` defaults to empty; the application dynamically discovers installed models via `GET /api/tags`.
+- **User Configurable**: The user can configure the active model via `.env`, query parameters, or runtime API endpoint `POST /api/ai/llm/config`.
+- **Graceful Error Handling & Non-Crashing Resilience**:
+  - If the model or Ollama daemon is unavailable, the provider returns a **clear, actionable error** along with the official installation link: [https://ollama.com/download](https://ollama.com/download).
+  - **Does NOT crash the entire application**: summarization falls back gracefully to calibrated extraction.
+  - **Allows other functionality to continue**: ticket ingestion, 5-tier classification, emotion/sentiment analysis, NER extraction, priority calculation, routing rules, agent assignment, team queue fallback, duplicate detection, semantic search, and incident detection continue without interruption.
+- **Provider Decoupling**: Application modules interact solely through `get_llm_provider()` and the `LLMProvider` abstract contract. Switching to cloud inference (`LLM_PROVIDER=groq`) requires zero code modifications.
 
 ### 15. AI Complaint Summarization (800-Word Compression & Storage)
 - **High-Fidelity Information Extraction**: Analyzes lengthy, verbose customer narratives (e.g., 800+ words) and generates a concise 2-3 sentence executive summary preserving essential details: customer issue, specific amounts, temporal context, and requested resolution.
@@ -163,7 +160,7 @@ When assigning human agents:
   - Stored in the relational `ai_responses` audit log (`response_type="SUMMARY"`, `provider="ollama"`/`"groq"`).
   - Emits an audited lifecycle transition event `AI_ANALYSIS_COMPLETED` (actor: `SUMMARIZER`).
 - **REST Endpoints & Frontend**:
-  - `POST /api/complaints/{id}/summarize?provider=ollama|groq`: Triggers on-demand AI summarization.
+  - `POST /api/complaints/{id}/summarize?provider=ollama|groq&model=...`: Triggers on-demand AI summarization with optional model override.
   - `GET /api/complaints/{id}/summary`: Retrieves the current persisted summary and metadata.
   - Interactive **Summarize with AI** action and provider tag in the Complaint Detail modal & detail page.
 
@@ -177,9 +174,9 @@ When assigning human agents:
 | **Backend** | FastAPI, Python 3.12, Pydantic v2, SQLAlchemy 2.0, Alembic, JWT Auth |
 | **Database & Vector** | PostgreSQL 16, `pgvector` (with automatic SQLite fallback for local testing) |
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
-| **Generative AI** | Pluggable `LLMProvider` (`GroqProvider` Cloud API, `OllamaProvider` Local LLM), RAG Pipeline |
+| **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Groq Cloud API), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (105 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (109 passing automated tests) |
 
 
 ---
@@ -272,13 +269,13 @@ Open your browser at: **http://localhost:5173**
 
 ## 🧪 Running Automated Tests
 
-Run the complete backend test suite across all 105 unit and integration tests:
+Run the complete backend test suite across all 109 unit and integration tests:
 ```bash
 pytest backend/app/tests -v
 ```
 
-### Test Coverage (105 Tests Passing):
-- **`test_summarization.py`**: Pluggable `LLMProvider` abstraction (`OllamaProvider`, `GroqProvider`, `LLM_PROVIDER` environment configuration), 800-word complaint summarization extracting duplicate payment of ₹5,000, timing ("today"), and immediate refund request, database persistence in `complaint.summary` and `ai_responses` (`response_type="SUMMARY"`), and REST endpoints (`POST /api/complaints/{id}/summarize`, `GET /api/complaints/{id}/summary`).
+### Test Coverage (109 Tests Passing):
+- **`test_summarization.py`**: Pluggable `LLMProvider` abstraction (`OllamaProvider`, `GroqProvider`, `LLM_PROVIDER` environment configuration), default local Ollama configuration (`OLLAMA_BASE_URL=http://localhost:11434`, `OLLAMA_MODEL=`), dynamic model configuration without assuming pre-installation, clear error handling when model/daemon is unavailable, official Ollama download link (`https://ollama.com/download`), non-crashing application resilience, 800-word complaint summarization extracting duplicate payment of ₹5,000, timing ("today"), and immediate refund request, database persistence in `complaint.summary` and `ai_responses` (`response_type="SUMMARY"`), and REST endpoints (`POST /api/complaints/{id}/summarize`, `GET /api/complaints/{id}/summary`, `GET /api/ai/llm/status`, `GET /api/ai/llm/models`, `POST /api/ai/llm/config`).
 - **`test_incidents.py`**: Semantic incident detection over sliding time windows, user exact scenario (50 complaints with "Portal is not working.", "Cannot login.", "Account access unavailable." -> Potential Incident Detected, "Portal Authentication Failure", IT department, HIGH severity, 50 affected), manager actions (Acknowledge, Resolve), and REST endpoints (`/api/incidents/detect`, `/api/incidents/active`, `/api/incidents/{id}/acknowledge`, `/api/incidents/{id}/resolve`).
 - **`test_semantic_search.py`**: Dense vector concept embeddings, lexical gap bridging ("Money was deducted twice." vs "I was charged two times for the same transaction." similarity $\ge 0.85$), `search_complaints` retrieval, `find_similar_to_complaint`, and REST endpoints (`/semantic-search`, `/{id}/find-similar`).
 - **`test_duplicate_detection.py`**: Sentence Transformers + pgvector flow, TF-IDF baseline, $\ge 0.85$ duplicate warning, and agent actions (Link, Merge, Ignore).
@@ -301,14 +298,19 @@ pytest backend/app/tests -v
 
 ## 🔒 Configuration & Integrations
 
-1. **Pluggable LLM Provider (`LLM_PROVIDER`)**:
-   - Set `LLM_PROVIDER=groq` or `LLM_PROVIDER=ollama` in `.env`.
-   - The application relies on `LLMProvider` abstraction, completely decoupled from provider implementations.
-2. **Groq Cloud API**:
-   - Set `GROQ_API_KEY=your_key_here` in `.env` for ultra-fast Llama-3 inference.
-3. **Local Ollama**:
-   - Run `ollama run llama3` and set `OLLAMA_BASE_URL=http://localhost:11434` in `.env`.
-4. **Gmail API**:
+1. **Default Local Ollama (`OLLAMA_BASE_URL` & `OLLAMA_MODEL`)**:
+   - Download Ollama: [https://ollama.com/download](https://ollama.com/download)
+   - Default configuration in `.env`:
+     ```env
+     LLM_PROVIDER=ollama
+     OLLAMA_BASE_URL=http://localhost:11434
+     OLLAMA_MODEL=
+     ```
+   - Does not assume a model is pre-installed; allows user to configure any model (`llama3`, `mistral`, `qwen2.5`, `phi3`, etc.).
+   - If the model or daemon is unavailable, returns a clear error and allows all other application operations to continue without crashing.
+2. **Groq Cloud API (Optional Cloud Provider)**:
+   - Set `GROQ_API_KEY=your_key_here` in `.env` for ultra-fast Llama-3 cloud inference.
+3. **Gmail API**:
    - Place OAuth client credentials as `credentials.json` in the root directory.
-5. **Configurable Database Rules**:
+4. **Configurable Database Rules**:
    - Manage routing rules dynamically via `POST /api/routing-rules` or the frontend settings interface without code deployments.

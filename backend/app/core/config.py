@@ -39,9 +39,9 @@ class Settings(BaseSettings):
     # Generative AI Provider: 'ollama' (default local) or 'groq' (optional cloud)
     LLM_PROVIDER: str = Field(default="ollama", env="LLM_PROVIDER")
     
-    # Local Ollama Configuration
+    # Local Ollama Configuration (Download: https://ollama.com/download)
     OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    OLLAMA_MODEL: str = Field(default="llama3.2", env="OLLAMA_MODEL")
+    OLLAMA_MODEL: str = Field(default="", env="OLLAMA_MODEL")
     
     # Cloud Groq Configuration (Optional)
     GROQ_API_KEY: str = Field(default="", env="GROQ_API_KEY")
