@@ -13,6 +13,7 @@ from app.services.notification_service import notification_service
 from app.services.audit_service import audit_service
 from app.services.lifecycle_service import lifecycle_service
 from app.repositories.complaint_repository import complaint_repository
+from app.ai.duplicate_detector import duplicate_detector
 
 class ComplaintService:
     @staticmethod
@@ -255,10 +256,25 @@ class ComplaintService:
         complaint.summary = ai_res.get("summary", "")
         complaint.sla_deadline = sla_deadline
         complaint.cleaned_text = ai_res["cleaned_text"]
-        complaint.is_duplicate = ai_res["is_duplicate"]
-        complaint.duplicate_of_id = ai_res["duplicate_of_id"]
+        complaint.is_duplicate = ai_res.get("is_duplicate", False)
+        complaint.duplicate_of_id = ai_res.get("duplicate_of_id") or ai_res.get("matched_complaint_id")
+        complaint.duplicate_similarity = float(ai_res.get("similarity_score", 0.0))
+        complaint.duplicate_status = "POSSIBLE" if complaint.is_duplicate else "NONE"
         complaint.embedding = ai_res["embedding"]
         db.flush()
+
+        if complaint.is_duplicate and complaint.duplicate_of_id:
+            lifecycle_service.record_event(
+                db=db,
+                complaint_id=complaint.id,
+                event_type="DUPLICATE_DETECTED",
+                actor="AI_ENGINE",
+                description=f"Possible duplicate complaint (Similarity: {complaint.duplicate_similarity:.2f}) of #{complaint.duplicate_of_id}",
+                event_metadata={
+                    "matched_complaint_id": complaint.duplicate_of_id,
+                    "similarity": complaint.duplicate_similarity
+                }
+            )
 
         # 6. Record Prediction
         db.add(ComplaintPrediction(
@@ -380,5 +396,159 @@ class ComplaintService:
         db.commit()
         db.refresh(complaint)
         return complaint
+
+    @staticmethod
+    def link_duplicate_complaint(
+        db: Session,
+        complaint_id: int,
+        target_complaint_id: int,
+        notes: Optional[str] = None,
+        actor: str = "Support Agent"
+    ) -> Complaint:
+        """Links a duplicate complaint to a target complaint, keeping both tickets active and auditable."""
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        target = complaint_repository.get_by_id(db, target_complaint_id)
+        if not target:
+            raise ValueError(f"Target complaint {target_complaint_id} not found")
+
+        complaint.duplicate_of_id = target.id
+        complaint.duplicate_status = "LINKED"
+
+        # Record event on current complaint
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=complaint.id,
+            event_type="COMPLAINTS_LINKED",
+            actor=actor,
+            description=f"Ticket linked to #{target.ticket_number or target.id}: {notes or 'Marked as related/duplicate'}",
+            event_metadata={"linked_complaint_id": target.id, "linked_ticket": target.ticket_number}
+        )
+
+        # Record event on target complaint
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=target.id,
+            event_type="COMPLAINT_LINK_ATTACHED",
+            actor=actor,
+            description=f"Ticket #{complaint.ticket_number or complaint.id} linked as related/duplicate",
+            event_metadata={"source_complaint_id": complaint.id, "source_ticket": complaint.ticket_number}
+        )
+
+        db.commit()
+        db.refresh(complaint)
+        return complaint
+
+    @staticmethod
+    def merge_duplicate_complaint(
+        db: Session,
+        complaint_id: int,
+        primary_complaint_id: int,
+        reason: Optional[str] = None,
+        actor: str = "Support Agent"
+    ) -> Complaint:
+        """Merges a duplicate complaint into a primary complaint, closing the duplicate and preserving context."""
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        primary = complaint_repository.get_by_id(db, primary_complaint_id)
+        if not primary:
+            raise ValueError(f"Primary complaint {primary_complaint_id} not found")
+
+        complaint.duplicate_of_id = primary.id
+        complaint.duplicate_status = "MERGED"
+
+        # Transition status to RESOLVED/MERGED
+        lifecycle_service.transition_status(
+            db=db,
+            complaint=complaint,
+            new_status="RESOLVED",
+            actor=actor,
+            description=f"Merged into ticket #{primary.ticket_number or primary.id}. Reason: {reason or 'Duplicate ticket'}",
+            event_metadata={"primary_complaint_id": primary.id, "primary_ticket": primary.ticket_number}
+        )
+
+        # Record context on primary complaint
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=primary.id,
+            event_type="COMPLAINTS_MERGED",
+            actor=actor,
+            description=f"Duplicate ticket #{complaint.ticket_number or complaint.id} merged into this ticket. Reason: {reason or 'Duplicate inquiry'}",
+            event_metadata={"merged_complaint_id": complaint.id, "merged_ticket": complaint.ticket_number}
+        )
+
+        db.commit()
+        db.refresh(complaint)
+        return complaint
+
+    @staticmethod
+    def ignore_duplicate_warning(
+        db: Session,
+        complaint_id: int,
+        reason: Optional[str] = None,
+        actor: str = "Support Agent"
+    ) -> Complaint:
+        """Dismisses duplicate warning on a complaint, allowing it to proceed independently."""
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        complaint.is_duplicate = False
+        complaint.duplicate_status = "IGNORED"
+
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=complaint.id,
+            event_type="DUPLICATE_WARNING_IGNORED",
+            actor=actor,
+            description=f"Duplicate warning dismissed by {actor}. Reason: {reason or 'Confirmed independent inquiry'}",
+            event_metadata={"reason": reason}
+        )
+
+        db.commit()
+        db.refresh(complaint)
+        return complaint
+
+    @staticmethod
+    def get_similar_complaints(db: Session, complaint_id: int) -> Dict[str, Any]:
+        """Runs Sentence Transformers + pgvector similarity search and TF-IDF baseline for a complaint."""
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        text_content = f"{complaint.subject or ''} {complaint.description or complaint.body or ''}"
+        res = duplicate_detector.detect_similar_and_duplicates(
+            new_embedding=complaint.embedding,
+            db=db,
+            current_complaint_id=complaint.id,
+            complaint_text=text_content
+        )
+
+        # Also get baseline comparison
+        baseline_res = duplicate_detector.baseline_engine.detect_duplicates(
+            query_text=text_content,
+            db=db,
+            current_complaint_id=complaint.id
+        )
+
+        return {
+            "complaint_id": complaint.id,
+            "ticket_number": complaint.ticket_number,
+            "is_duplicate": res["is_duplicate"],
+            "matched_complaint_id": res.get("matched_complaint_id"),
+            "similarity_score": res.get("similarity_score", 0.0),
+            "display_warning": res.get("display_warning"),
+            "duplicate_status": complaint.duplicate_status,
+            "similar_complaints": res.get("similar_complaints", []),
+            "baseline_tfidf": {
+                "similarity_score": baseline_res.get("similarity_score", 0.0),
+                "is_duplicate": baseline_res.get("is_duplicate", False),
+                "similar_complaints": baseline_res.get("similar_complaints", [])
+            }
+        }
 
 complaint_service = ComplaintService()

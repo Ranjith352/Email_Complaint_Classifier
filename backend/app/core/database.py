@@ -41,7 +41,12 @@ def init_db():
     # Auto-migrate schema if new columns were added
     try:
         with engine.connect() as conn:
-            for col, col_type in [("reviewed_by", "VARCHAR(255)"), ("reviewed_at", "DATETIME")]:
+            for col, col_type in [
+                ("reviewed_by", "VARCHAR(255)"),
+                ("reviewed_at", "DATETIME"),
+                ("duplicate_similarity", "FLOAT DEFAULT 0.0"),
+                ("duplicate_status", "VARCHAR(50) DEFAULT 'NONE'")
+            ]:
                 try:
                     conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col} {col_type};"))
                     conn.commit()

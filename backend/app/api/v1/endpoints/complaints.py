@@ -14,7 +14,9 @@ from app.schemas.complaint import (
     ComplaintCreate, ComplaintResponse, ComplaintUpdate,
     AssignRequest, ResolveRequest, FeedbackCreate, FeedbackResponse,
     EscalateRequest, SendResponseRequest, StatusTransitionRequest,
-    ComplaintEventResponse, ComplaintEntityResponse, ComplaintReviewRequest
+    ComplaintEventResponse, ComplaintEntityResponse, ComplaintReviewRequest,
+    ComplaintLinkRequest, ComplaintMergeRequest, ComplaintIgnoreDuplicateRequest,
+    DuplicateSearchResponse
 )
 from app.ai.ai_orchestrator import ai_orchestrator
 from app.services.audit_service import audit_service
@@ -377,4 +379,54 @@ def review_complaint(complaint_id: int, req: ComplaintReviewRequest, db: Session
         reviewer_name=req.reviewer_name,
         notes=req.notes
     )
+
+@router.post("/{complaint_id}/duplicate/link", response_model=ComplaintResponse)
+def link_duplicate_complaint(complaint_id: int, req: ComplaintLinkRequest, db: Session = Depends(get_db)):
+    """Links a duplicate complaint to a parent/target complaint."""
+    try:
+        return complaint_service.link_duplicate_complaint(
+            db=db,
+            complaint_id=complaint_id,
+            target_complaint_id=req.target_complaint_id,
+            notes=req.notes,
+            actor=req.actor or "Support Agent"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/{complaint_id}/duplicate/merge", response_model=ComplaintResponse)
+def merge_duplicate_complaint(complaint_id: int, req: ComplaintMergeRequest, db: Session = Depends(get_db)):
+    """Merges a duplicate complaint into a primary complaint and marks duplicate ticket resolved/merged."""
+    try:
+        return complaint_service.merge_duplicate_complaint(
+            db=db,
+            complaint_id=complaint_id,
+            primary_complaint_id=req.primary_complaint_id,
+            reason=req.reason,
+            actor=req.actor or "Support Agent"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/{complaint_id}/duplicate/ignore", response_model=ComplaintResponse)
+def ignore_duplicate_warning(complaint_id: int, req: ComplaintIgnoreDuplicateRequest, db: Session = Depends(get_db)):
+    """Dismisses duplicate warning for a complaint and marks duplicate_status as IGNORED."""
+    try:
+        return complaint_service.ignore_duplicate_warning(
+            db=db,
+            complaint_id=complaint_id,
+            reason=req.reason,
+            actor=req.actor or "Support Agent"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/{complaint_id}/similar", response_model=DuplicateSearchResponse)
+def get_similar_complaints(complaint_id: int, db: Session = Depends(get_db)):
+    """Retrieves similar complaints and duplicate matches using Sentence Transformers + pgvector and TF-IDF baseline."""
+    try:
+        return complaint_service.get_similar_complaints(db=db, complaint_id=complaint_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 

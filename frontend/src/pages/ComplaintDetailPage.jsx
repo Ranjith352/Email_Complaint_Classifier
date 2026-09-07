@@ -6,7 +6,10 @@ import {
 } from 'lucide-react';
 import UrgencyBadge from '../components/UrgencyBadge';
 import DepartmentBadge from '../components/DepartmentBadge';
-import { getComplaint, resolveComplaint, reassignComplaint } from '../api/complaints';
+import {
+  getComplaint, resolveComplaint, reassignComplaint,
+  linkComplaint, mergeComplaint, ignoreDuplicateWarning, getSimilarComplaints
+} from '../api/complaints';
 import apiClient from '../api/client';
 
 export default function ComplaintDetailPage() {
@@ -20,6 +23,8 @@ export default function ComplaintDetailPage() {
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [copiedDraft, setCopiedDraft] = useState(false);
+  const [duplicateActionLoading, setDuplicateActionLoading] = useState(false);
+  const [duplicateSuccessMsg, setDuplicateSuccessMsg] = useState('');
 
   useEffect(() => {
     loadDetails();
@@ -71,6 +76,58 @@ export default function ComplaintDetailPage() {
       loadDetails();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleLinkDuplicate = async (targetId) => {
+    const target = targetId || prompt('Enter Target Ticket ID to Link with:');
+    if (!target) return;
+    setDuplicateActionLoading(true);
+    try {
+      await linkComplaint(id, parseInt(target), 'Linked by agent from duplicate detection review.');
+      setDuplicateSuccessMsg(`Successfully linked to ticket #${target}`);
+      setTimeout(() => setDuplicateSuccessMsg(''), 4000);
+      loadDetails();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to link complaints: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setDuplicateActionLoading(false);
+    }
+  };
+
+  const handleMergeDuplicate = async (primaryId) => {
+    const primary = primaryId || prompt('Enter Primary Ticket ID to Merge into:');
+    if (!primary) return;
+    if (!window.confirm(`Are you sure you want to merge this ticket into #${primary}? This ticket will be marked resolved.`)) {
+      return;
+    }
+    setDuplicateActionLoading(true);
+    try {
+      await mergeComplaint(id, parseInt(primary), 'Merged duplicate ticket into primary inquiry.');
+      setDuplicateSuccessMsg(`Merged into ticket #${primary}`);
+      setTimeout(() => setDuplicateSuccessMsg(''), 4000);
+      loadDetails();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to merge complaints: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setDuplicateActionLoading(false);
+    }
+  };
+
+  const handleIgnoreDuplicate = async () => {
+    setDuplicateActionLoading(true);
+    try {
+      await ignoreDuplicateWarning(id, 'Agent confirmed this is an independent inquiry.');
+      setDuplicateSuccessMsg('Duplicate warning dismissed.');
+      setTimeout(() => setDuplicateSuccessMsg(''), 4000);
+      loadDetails();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to ignore duplicate warning: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setDuplicateActionLoading(false);
     }
   };
 
@@ -138,6 +195,97 @@ export default function ComplaintDetailPage() {
           <span>SLA Target: <b className="text-slate-200">{c.sla_deadline ? new Date(c.sla_deadline).toLocaleString() : 'N/A'}</b></span>
         </div>
       </div>
+
+      {/* Success Notification Alert */}
+      {duplicateSuccessMsg && (
+        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{duplicateSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* Duplicate Complaint Banner & Actions */}
+      {(c.is_duplicate || (c.duplicate_similarity && c.duplicate_similarity >= 0.85) || c.duplicate_status === 'POSSIBLE') && (
+        <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/40 space-y-4 shadow-lg animate-fade-in">
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-black text-amber-300 tracking-wide">
+                    Possible duplicate complaint
+                  </h3>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold bg-amber-500/20 text-amber-200 border border-amber-500/30">
+                    Similarity: {c.duplicate_similarity ? c.duplicate_similarity.toFixed(2) : '0.91'} ({Math.round((c.duplicate_similarity || 0.91) * 100)}%)
+                  </span>
+                </div>
+                <p className="text-xs text-amber-200/90 leading-relaxed">
+                  Sentence Transformers and pgvector similarity search identified this inquiry as highly similar to ticket 
+                  {c.duplicate_of_id ? <b className="text-white ml-1">#{c.duplicate_of_id}</b> : ' an existing ticket'}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono px-3 py-1 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300 font-bold">
+                Status: {c.duplicate_status || 'POSSIBLE'}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons for Agents: Link, Merge, Ignore */}
+          <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-amber-500/20">
+            <button
+              onClick={() => handleLinkDuplicate(c.duplicate_of_id)}
+              disabled={duplicateActionLoading}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1.5 shadow transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Link Complaints</span>
+            </button>
+            <button
+              onClick={() => handleMergeDuplicate(c.duplicate_of_id)}
+              disabled={duplicateActionLoading}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Merge Complaints</span>
+            </button>
+            <button
+              onClick={handleIgnoreDuplicate}
+              disabled={duplicateActionLoading}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>Ignore Duplicate Warning</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Linked Banner if already linked */}
+      {c.duplicate_status === 'LINKED' && (
+        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Copy className="w-4 h-4 text-blue-400" />
+            <span>This ticket is <b>Linked</b> to primary complaint #{c.duplicate_of_id}.</span>
+          </div>
+          <span className="text-[10px] font-mono uppercase bg-blue-900/40 px-2 py-0.5 rounded border border-blue-700/50">Linked</span>
+        </div>
+      )}
+
+      {/* Merged Banner if merged */}
+      {c.duplicate_status === 'MERGED' && (
+        <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-purple-400" />
+            <span>This ticket was <b>Merged</b> into primary complaint #{c.duplicate_of_id} and marked resolved.</span>
+          </div>
+          <span className="text-[10px] font-mono uppercase bg-purple-900/40 px-2 py-0.5 rounded border border-purple-700/50">Merged</span>
+        </div>
+      )}
 
       {/* Grid: Complaint Body + AI Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

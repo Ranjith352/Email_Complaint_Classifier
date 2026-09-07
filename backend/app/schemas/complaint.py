@@ -128,16 +128,13 @@ class ComplaintResponse(BaseModel):
     status: str
     summary: Optional[str] = None
     sla_deadline: Optional[datetime] = None
+    is_duplicate: bool = False
+    duplicate_of_id: Optional[int] = None
+    duplicate_similarity: float = 0.0
+    duplicate_status: str = "NONE"
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None
-
-class ComplaintReviewRequest(BaseModel):
-    department_id: Optional[int] = None
-    team_id: Optional[int] = None
-    assigned_agent_id: Optional[int] = None
-    reviewer_name: str = "Support Lead"
-    notes: Optional[str] = None
 
     # Backward compatibility aliases
     ticket_number: Optional[str] = None
@@ -146,3 +143,35 @@ class ComplaintReviewRequest(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ComplaintReviewRequest(BaseModel):
+    department_id: Optional[int] = None
+    team_id: Optional[int] = None
+    assigned_agent_id: Optional[int] = None
+    reviewer_name: str = "Support Lead"
+    notes: Optional[str] = None
+
+class ComplaintLinkRequest(BaseModel):
+    target_complaint_id: int
+    notes: Optional[str] = None
+    actor: Optional[str] = "Support Agent"
+
+class ComplaintMergeRequest(BaseModel):
+    primary_complaint_id: int
+    reason: Optional[str] = None
+    actor: Optional[str] = "Support Agent"
+
+class ComplaintIgnoreDuplicateRequest(BaseModel):
+    reason: Optional[str] = None
+    actor: Optional[str] = "Support Agent"
+
+class DuplicateSearchResponse(BaseModel):
+    complaint_id: int
+    matched_complaint_id: Optional[int] = None
+    similarity_score: float
+    is_duplicate: bool
+    display_warning: Optional[str] = None
+    duplicate_status: str
+    similar_complaints: List[Dict[str, Any]] = []
+    baseline_tfidf: Optional[Dict[str, Any]] = None
+

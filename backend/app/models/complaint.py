@@ -74,6 +74,8 @@ class Complaint(Base):
     # Similarity & Deduplication
     is_duplicate = Column(Boolean, default=False, nullable=False)
     duplicate_of_id = Column(Integer, ForeignKey("complaints.id", ondelete="SET NULL"), nullable=True)
+    duplicate_similarity = Column(Float, default=0.0, nullable=False)
+    duplicate_status = Column(String(50), default="NONE", nullable=False)  # NONE, POSSIBLE, LINKED, MERGED, IGNORED
     
     # Embeddings & Preprocessing
     cleaned_text = Column(Text, nullable=True)

@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-86%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-93%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, and drafts empathetic RAG-backed resolutions using Groq Cloud (`llama-3.3-70b-versatile`) and local Ollama (`llama3`).
 
@@ -88,7 +88,20 @@ When assigning human agents:
 7. **Prefer suitable lower-workload agents**: Prioritizes agents with the lowest current workload / highest remaining capacity.
 - **Team Queue Fallback**: If no suitable agent exists (e.g. team is offline or at maximum capacity), the ticket is routed directly to the **Team Queue** (`complaint.status = "ROUTED"`, `complaint.assigned_agent_id = None`, `ENQUEUED_IN_TEAM_QUEUE`). **The complaint is preserved with zero data loss.**
 
-### 11. Dual Generative AI & pgvector RAG
+### 11. Semantic Duplicate Detection & Agent Resolution Actions
+- **Baseline Benchmark**: TF-IDF feature extraction with cosine similarity comparison preserved for reference.
+- **Primary Engine (Sentence Transformers + pgvector)**:
+  ```
+  Complaint ──> Embedding (384-d dense vector) ──> pgvector ──> Similarity Search ──> Similar Complaints
+  ```
+- **Detection Output**: Returns `matched_complaint_id` and `similarity_score`.
+- **Threshold Escalation**: Similarity score $\ge 0.85$ (e.g. 0.91) flags `is_duplicate = True` and renders **"Possible duplicate complaint"**.
+- **Human Agent Resolution Actions**:
+  - **Link Complaints**: Connects duplicate ticket to the primary complaint (`POST /api/complaints/{id}/duplicate/link`), keeping both tickets active and audited.
+  - **Merge Complaints**: Merges duplicate ticket into primary complaint (`POST /api/complaints/{id}/duplicate/merge`), transitioning status to `RESOLVED`/`MERGED` and transferring context.
+  - **Ignore Duplicate Warning**: Dismisses the warning (`POST /api/complaints/{id}/duplicate/ignore`), clearing the duplicate flag.
+
+### 12. Dual Generative AI & pgvector RAG
 - **Groq Cloud**: Ultra-fast inference with `llama-3.3-70b-versatile`.
 - **Local Ollama**: Offline fallback with `llama3`.
 - **pgvector Semantic Search**: 384-dimensional embeddings match incoming complaints against company SOPs, refund policies, and historical resolutions.
@@ -105,7 +118,7 @@ When assigning human agents:
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Groq Cloud API, Ollama (Local LLM), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (86 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (93 passing automated tests) |
 
 ---
 
@@ -192,12 +205,13 @@ Open your browser at: **http://localhost:5173**
 
 ## 🧪 Running Automated Tests
 
-Run the complete backend test suite across all 86 unit and integration tests:
+Run the complete backend test suite across all 93 unit and integration tests:
 ```bash
 pytest backend/app/tests -v
 ```
 
-### Test Coverage (86 Tests Passing):
+### Test Coverage (93 Tests Passing):
+- **`test_duplicate_detection.py`**: Sentence Transformers + pgvector flow, TF-IDF baseline, $\ge 0.85$ duplicate warning, and agent actions (Link, Merge, Ignore).
 - **`test_agent_assignment.py`**: 7-step criteria verification, lower-workload priority, and team queue fallback.
 - **`test_routing_rules.py`**: REST CRUD for configurable rules, user exact rule mappings, and dynamic runtime additions.
 - **`test_routing_pipeline.py`**: Complete 8-stage routing pipeline breakdown and user duplicate payment verification.

@@ -41,3 +41,32 @@ export const deleteComplaint = async (id) => {
   const response = await apiClient.delete(`/complaints/${id}`);
   return response.data;
 };
+
+export const linkComplaint = async (id, targetComplaintId, notes = '') => {
+  const response = await apiClient.post(`/complaints/${id}/duplicate/link`, {
+    target_complaint_id: targetComplaintId,
+    notes,
+  });
+  return response.data;
+};
+
+export const mergeComplaint = async (id, primaryComplaintId, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/duplicate/merge`, {
+    primary_complaint_id: primaryComplaintId,
+    reason,
+  });
+  return response.data;
+};
+
+export const ignoreDuplicateWarning = async (id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/duplicate/ignore`, {
+    reason,
+  });
+  return response.data;
+};
+
+export const getSimilarComplaints = async (id) => {
+  const response = await apiClient.get(`/complaints/${id}/similar`);
+  return response.data;
+};
+
