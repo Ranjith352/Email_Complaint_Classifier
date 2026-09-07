@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Inbox, AlertCircle, CheckCircle2, Clock, Zap, Plus, ArrowUpRight, TrendingUp, ShieldCheck
+  Inbox, AlertCircle, CheckCircle2, Clock, Zap, Plus, ArrowUpRight, TrendingUp, ShieldCheck,
+  ShieldAlert, Sparkles, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -13,12 +14,15 @@ import ComplaintDetailModal from '../components/ComplaintDetailModal';
 import NewComplaintModal from '../components/NewComplaintModal';
 import { getDashboardAnalytics } from '../api/analytics';
 import { getComplaints } from '../api/complaints';
+import { getActiveIncidents, detectIncidents, acknowledgeIncident, resolveIncident } from '../api/incidents';
 
 const COLORS = ['#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ec4899'];
 
 export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [criticalComplaints, setCriticalComplaints] = useState([]);
+  const [activeIncidents, setActiveIncidents] = useState([]);
+  const [scanningIncidents, setScanningIncidents] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
@@ -30,16 +34,53 @@ export default function DashboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [anRes, compRes] = await Promise.all([
+      const [anRes, compRes, incRes] = await Promise.all([
         getDashboardAnalytics(),
         getComplaints({ urgency: 'Critical', limit: 5 }),
+        getActiveIncidents().catch(() => [])
       ]);
       setAnalytics(anRes);
       setCriticalComplaints(compRes);
+      setActiveIncidents(incRes || []);
     } catch (err) {
       console.error('Failed to load dashboard data', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleScanIncidents = async () => {
+    setScanningIncidents(true);
+    try {
+      await detectIncidents({ window_hours: 24, min_complaints: 3, similarity_threshold: 0.60 });
+      const updated = await getActiveIncidents();
+      setActiveIncidents(updated || []);
+    } catch (err) {
+      console.error('Failed to scan incidents:', err);
+    } finally {
+      setScanningIncidents(false);
+    }
+  };
+
+  const handleAcknowledgeIncident = async (id) => {
+    try {
+      await acknowledgeIncident(id, 'IT Operations Manager', 'Investigating cluster root cause.');
+      const updated = await getActiveIncidents();
+      setActiveIncidents(updated || []);
+    } catch (err) {
+      console.error('Failed to acknowledge incident:', err);
+    }
+  };
+
+  const handleResolveIncident = async (id) => {
+    const notes = prompt('Enter resolution notes:', 'Services restored and auth issue resolved.');
+    if (!notes) return;
+    try {
+      await resolveIncident(id, 'IT Operations Manager', notes);
+      const updated = await getActiveIncidents();
+      setActiveIncidents(updated || []);
+    } catch (err) {
+      console.error('Failed to resolve incident:', err);
     }
   };
 
@@ -52,17 +93,128 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-2xl font-black text-white tracking-tight">Executive Triage Command Center</h2>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time multi-channel complaint classification, pgvector semantic routing, and SLA compliance telemetry.
+            Real-time multi-channel complaint classification, semantic incident detection, and SLA compliance telemetry.
           </p>
         </div>
-        <button
-          onClick={() => setShowNewModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/20 transition-all hover:scale-[1.02]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Complaint Triage</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleScanIncidents}
+            disabled={scanningIncidents}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-rose-300 border border-rose-500/30 shadow-sm transition-all"
+          >
+            <ShieldAlert className={`w-3.5 h-3.5 ${scanningIncidents ? 'animate-spin' : ''}`} />
+            <span>{scanningIncidents ? 'Scanning Incidents...' : 'Scan For Incidents'}</span>
+          </button>
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/20 transition-all hover:scale-[1.02]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Complaint Triage</span>
+          </button>
+        </div>
       </div>
+
+      {/* Active Potential Incidents Section for Managers */}
+      {activeIncidents.length > 0 && (
+        <div className="space-y-4 animate-fade-in">
+          {activeIncidents.map((inc) => (
+            <div
+              key={inc.id}
+              className="p-6 rounded-2xl bg-gradient-to-r from-rose-950/40 via-purple-950/20 to-slate-900 border border-rose-500/40 shadow-2xl relative overflow-hidden"
+            >
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/50 shadow-sm animate-pulse">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      Potential Incident Detected
+                    </span>
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">
+                      {inc.incident_number}
+                    </span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-rose-500/30 text-rose-200 border border-rose-500/60">
+                      Severity: {inc.severity}
+                    </span>
+                    <DepartmentBadge department={inc.department_name} />
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                      Status: {inc.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                      <span>Incident:</span>
+                      <span className="text-rose-300">{inc.title}</span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                      {inc.description}
+                    </p>
+                  </div>
+
+                  {/* Metric counters */}
+                  <div className="flex items-center gap-6 pt-2 text-xs flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-semibold">Affected Complaints:</span>
+                      <span className="text-sm font-black text-rose-400 bg-rose-950/60 px-2.5 py-0.5 rounded-lg border border-rose-800/60">
+                        {inc.affected_count}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-semibold">Department:</span>
+                      <span className="font-bold text-white">{inc.department_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-semibold">Detected:</span>
+                      <span className="text-slate-300">{new Date(inc.detected_at).toLocaleTimeString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Sample complaints list */}
+                  {inc.sample_complaints?.length > 0 && (
+                    <div className="pt-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Semantic Sample Complaints:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {inc.sample_complaints.map((sample, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded-lg text-xs bg-slate-950/80 border border-slate-800 text-slate-300 italic"
+                          >
+                            "{sample}"
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2 shrink-0">
+                  {inc.status === 'DETECTED' && (
+                    <button
+                      onClick={() => handleAcknowledgeIncident(inc.id)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center gap-1.5 shadow transition-colors"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Acknowledge Incident</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleResolveIncident(inc.id)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 shadow transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Resolve Incident</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

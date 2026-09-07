@@ -115,7 +115,25 @@ When assigning human agents:
   - Semantic Search mode in the Complaints Explorer with instant example chips and similarity percentage badges.
   - "Find complaints similar to this one" drawer in the ticket detail view with direct Link, Merge, and Inspect actions.
 
-### 13. Dual Generative AI & pgvector RAG
+### 13. Semantic Incident Detection & Executive Manager Alerting
+- **Sliding Window Semantic Clustering**: Evaluates complaints arriving within a short time window (e.g. 1h, 6h, 24h) and clusters semantically related issues using dense Sentence Transformers vectors.
+- **Automated Incident Synthesis**:
+  - **Example**:
+    - Incoming complaints (50 tickets):
+      - *"Portal is not working."*
+      - *"Cannot login."*
+      - *"Account access unavailable."*
+    - **System Detection**:
+      - **Status**: `Potential Incident Detected`
+      - **Incident Title**: `Portal Authentication Failure`
+      - **Affected complaints**: `50`
+      - **Department**: `IT`
+      - **Severity**: `HIGH`
+- **Manager Command Center Visibility**:
+  - Prominent real-time incident alert cards surfaced to managers in the Executive Triage Command Center.
+  - Provides instant root cause context, sample complaint quotations, and one-click **Acknowledge Incident** and **Resolve Incident** workflows.
+
+### 14. Dual Generative AI & pgvector RAG
 - **Groq Cloud**: Ultra-fast inference with `llama-3.3-70b-versatile`.
 - **Local Ollama**: Offline fallback with `llama3`.
 - **pgvector Semantic Search**: 384-dimensional embeddings match incoming complaints against company SOPs, refund policies, and historical resolutions.
@@ -132,7 +150,8 @@ When assigning human agents:
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Groq Cloud API, Ollama (Local LLM), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (93 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (101 passing automated tests) |
+
 
 ---
 
@@ -219,12 +238,13 @@ Open your browser at: **http://localhost:5173**
 
 ## 🧪 Running Automated Tests
 
-Run the complete backend test suite across all 98 unit and integration tests:
+Run the complete backend test suite across all 101 unit and integration tests:
 ```bash
 pytest backend/app/tests -v
 ```
 
-### Test Coverage (98 Tests Passing):
+### Test Coverage (101 Tests Passing):
+- **`test_incidents.py`**: Semantic incident detection over sliding time windows, user exact scenario (50 complaints with "Portal is not working.", "Cannot login.", "Account access unavailable." -> Potential Incident Detected, "Portal Authentication Failure", IT department, HIGH severity, 50 affected), manager actions (Acknowledge, Resolve), and REST endpoints (`/api/incidents/detect`, `/api/incidents/active`, `/api/incidents/{id}/acknowledge`, `/api/incidents/{id}/resolve`).
 - **`test_semantic_search.py`**: Dense vector concept embeddings, lexical gap bridging ("Money was deducted twice." vs "I was charged two times for the same transaction." similarity $\ge 0.85$), `search_complaints` retrieval, `find_similar_to_complaint`, and REST endpoints (`/semantic-search`, `/{id}/find-similar`).
 - **`test_duplicate_detection.py`**: Sentence Transformers + pgvector flow, TF-IDF baseline, $\ge 0.85$ duplicate warning, and agent actions (Link, Merge, Ignore).
 - **`test_agent_assignment.py`**: 7-step criteria verification, lower-workload priority, and team queue fallback.

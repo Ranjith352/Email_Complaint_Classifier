@@ -61,17 +61,20 @@ SEMANTIC_CONCEPT_CLUSTERS: Dict[str, Dict[str, Any]] = {
             "outage", "down", "crash", "crashed", "crashing", "broken", "500",
             "503", "502", "internal server error", "error", "errors", "offline",
             "unreachable", "timeout", "latency", "slow", "freeze", "frozen",
-            "glitch", "bug", "exception", "failed to load", "white screen"
+            "glitch", "bug", "exception", "failed to load", "white screen",
+            "not working", "unavailable", "portal", "system down"
         ]
     },
     "ACCOUNT_AUTHENTICATION": {
         "base_idx": 150,
         "span": 35,
-        "weight": 3.0,
+        "weight": 3.5,
         "terms": [
             "login", "log in", "signin", "sign in", "password", "auth",
             "authentication", "credentials", "otp", "2fa", "lockout", "locked",
-            "blocked", "reset password", "access portal", "cannot login"
+            "blocked", "reset password", "access portal", "cannot login",
+            "account access", "access unavailable", "portal is not working",
+            "portal not working", "access", "portal", "unavailable", "account"
         ]
     },
     "SECURITY_BREACH_COMPROMISE": {

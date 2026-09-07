@@ -5,6 +5,7 @@ from app.models.complaint import Complaint, ComplaintAssignment, ComplaintEvent,
 from app.models.intelligence import ComplaintPrediction, ComplaintEntity, AIResponse, ModelVersion
 from app.models.knowledge import KnowledgeDocument, KnowledgeChunk
 from app.models.operations import SLARule, Notification, EmailMessage, AuditLog
+from app.models.incident import Incident
 
 __all__ = [
     "Base",
@@ -25,5 +26,7 @@ __all__ = [
     "SLARule",
     "Notification",
     "EmailMessage",
-    "AuditLog"
+    "AuditLog",
+    "Incident"
 ]
+

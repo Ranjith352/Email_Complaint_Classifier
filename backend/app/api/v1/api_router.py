@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, complaints, departments, teams, agents,
     analytics, ai, knowledge, emails, notifications, audit,
-    routing_rules
+    routing_rules, incidents
 )
 
 api_router = APIRouter()
@@ -19,3 +19,5 @@ api_router.include_router(emails.router, prefix="/emails", tags=["Email Sync"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit Logs"])
 api_router.include_router(routing_rules.router, prefix="/routing-rules", tags=["Routing Rules"])
+api_router.include_router(incidents.router, prefix="/incidents", tags=["Incidents"])
+
