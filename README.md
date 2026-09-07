@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-115%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-120%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -212,6 +212,62 @@ To prevent hallucination, eliminate latency bottlenecks, and preserve strict reg
 - **Permissions & Security**: Strict Role-Based Access Control (RBAC) bitmasks and enum validations (`ADMIN`, `MANAGER`, `AGENT`, `CUSTOMER`).
 - **Agent Workload & Assignment**: 7-factor deterministic capacity matching (Department $\to$ Team $\to$ Skills $\to$ Availability $\to$ Workload $\to$ Capacity $\to$ Lowest Load Selection $\to$ Team Queue Fallback).
 
+### 17. Enterprise RAG Knowledge Base & 9-Stage Ingestion Pipeline
+Centralized corporate knowledge repository supporting 9 official document types with end-to-end vector ingestion and grounded RAG question answering.
+
+#### 1. The 9 Supported Enterprise Documents
+1. **Refund Policy**: Unconditional 30-day duplicate charge reversal rules, payment gateway turnaround times (UPI 2-5 days, Credit Card 5-7 days), and required transaction verification.
+2. **Billing Policy**: Monthly subscription billing cycles, 3-retry automated payment workflows, 5-day grace period, and 60-day invoice dispute windows.
+3. **Customer Support SOP**: Empathetic interaction etiquette, ticket intake checklists, root-cause tagging, and 24-hour CSAT follow-up standards.
+4. **SLA Policy**: Commitments across priority tiers (P1 Critical: 15m/4h, P2 High: 1h/8h, P3 Medium: 4h/24h, P4 Low: 12h/48h) and 75% warning auto-escalation.
+5. **Escalation Policy**: 3-Tier hierarchy (Tier-1 Frontline $\to$ Tier-2 Leads $\to$ Tier-3 Engineering Directors) and mandatory handoff documentation.
+6. **IT Troubleshooting Guide**: Web portal 500 error diagnostics, Redis auth session validation, JWT expiry checks, and payment gateway webhook reconciliations.
+7. **Security Policy**: AES-256 / TLS 1.3 encryption, compromised account containment protocol, and out-of-band 2FA identity challenge procedures.
+8. **HR Policy**: Support agent workload limits (max 10 concurrent high-priority tickets), mandatory 15-minute wellness breaks, and non-retaliation grievance procedures.
+9. **Finance Policy**: Financial delegation of authority matrix (Tier-1: ₹5,000, Leads: ₹25,000, Dept Heads: ₹100,000, CFO: > ₹100,000) and chargeback reconciliation rules.
+
+#### 2. The Complete 9-Stage RAG Pipeline
+```
+Document Upload (.txt, .md, .pdf, .json)
+       │
+       ▼
+Text Extraction (UTF-8/Latin-1 auto-decoding & JSON unwrap)
+       │
+       ▼
+Cleaning (Whitespace normalization, line ending standardization, noise removal)
+       │
+       ▼
+Chunking (Sliding window with overlap, 500 characters, sentence boundary preservation)
+       │
+       ▼
+Sentence Transformer (all-MiniLM-L6-v2)
+       │
+       ▼
+Embedding (384-dimensional dense semantic vectors)
+       │
+       ▼
+pgvector (PostgreSQL pgvector <=> cosine indexing with SQLite fallback)
+       │
+       ▼
+Semantic Retrieval (Top-k relevant chunks filtered by similarity threshold)
+       │
+       ▼
+Relevant Context (Structured context with document titles, types, and scores)
+       │
+       ▼
+Ollama / Groq (LLMProvider prompt execution with strict anti-hallucination guardrails)
+       │
+       ▼
+Grounded Answer (Verifiable answers with direct chunk citations and provider metadata)
+```
+
+#### 3. Out-of-the-Box Pre-Seeding & Frontend Studio
+- **Pre-Seeded Corpus**: Automatically seeds all 9 official policies into `knowledge_documents` and `knowledge_chunks` on first database startup.
+- **Frontend Studio (`/knowledge-base`)**:
+  - **Documents Library**: Filter by the 9 policy types with chunk count badges, search, and delete actions.
+  - **Document Ingestion Studio**: Drag-and-drop file upload with animated visual pipeline progress (Upload $\to$ Extract $\to$ Clean $\to$ Chunk $\to$ MiniLM $\to$ pgvector).
+  - **RAG Q&A Playground**: Interactive Q&A interface with sample query chips, real-time vector retrieval, cited chunk snippets, and grounded answers from Ollama/Groq.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -224,7 +280,7 @@ To prevent hallucination, eliminate latency bottlenecks, and preserve strict reg
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (115 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (120 passing automated tests) |
 
 
 ---

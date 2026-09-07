@@ -13,23 +13,36 @@ class RAGEngine:
         limit: int = 3,
         min_similarity: float = 0.40
     ) -> List[Dict[str, Any]]:
-        """Retrieves matching company policies and SOPs using vector cosine similarity."""
+        """Retrieves matching company policies and SOPs using vector cosine similarity across documents and granular chunks."""
+        from app.models.knowledge import KnowledgeChunk
         query_vector = embeddings_engine.get_embedding(query_text)
         docs = db.query(KnowledgeDocument).filter(KnowledgeDocument.is_active == True).all()
 
         scored = []
         for doc in docs:
-            if not doc.embedding:
-                continue
-            sim = embeddings_engine.cosine_similarity(query_vector, doc.embedding)
-            if sim >= min_similarity:
+            best_sim = 0.0
+            best_snippet = doc.chunk_text
+
+            if doc.embedding:
+                best_sim = embeddings_engine.cosine_similarity(query_vector, doc.embedding)
+
+            # Check granular chunks for higher precision semantic match
+            chunks = db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == doc.id).all()
+            for chunk in chunks:
+                if chunk.embedding:
+                    c_sim = embeddings_engine.cosine_similarity(query_vector, chunk.embedding)
+                    if c_sim > best_sim:
+                        best_sim = c_sim
+                        best_snippet = chunk.chunk_text
+
+            if best_sim >= min_similarity:
                 scored.append({
                     "id": doc.id,
                     "title": doc.title,
                     "category": doc.category,
                     "document_type": doc.document_type,
-                    "content_snippet": doc.chunk_text,
-                    "similarity": round(sim, 4)
+                    "content_snippet": best_snippet,
+                    "similarity": round(best_sim, 4)
                 })
 
         scored.sort(key=lambda x: x["similarity"], reverse=True)

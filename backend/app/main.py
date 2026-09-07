@@ -369,6 +369,10 @@ def seed_enterprise_data():
                 db.add(RoutingRule(**r))
             db.commit()
             logger.info("Seeded enterprise configurable routing rules.")
+
+        # Seed the 9 official enterprise policy documents if empty
+        from app.services.knowledge_service import knowledge_service
+        knowledge_service.seed_default_knowledge_base(db)
     except Exception as e:
         logger.error(f"Error during enterprise database seeding: {e}")
     finally:
