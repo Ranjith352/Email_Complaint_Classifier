@@ -14,10 +14,13 @@ export const chatWithAssistant = async (message) => {
   return res.data;
 };
 
-export const summarizeComplaint = async (id) => {
-  const res = await apiClient.post('/ai/analyze', { subject: 'Summary Request', body: `Ticket #${id}` });
+export const summarizeComplaint = async (id, provider = null) => {
+  const res = await apiClient.post(`/complaints/${id}/summarize`, null, {
+    params: provider ? { provider } : {}
+  });
   return res.data;
 };
+
 
 export const getResolutionRecommendations = async (id) => {
   const res = await apiClient.post('/ai/chat', { message: `Give resolution recommendations for ticket #${id}` });

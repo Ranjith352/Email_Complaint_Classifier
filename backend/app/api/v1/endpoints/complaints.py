@@ -473,4 +473,33 @@ def find_similar_to_complaint(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@router.post("/{complaint_id}/summarize")
+async def summarize_complaint(
+    complaint_id: int,
+    provider: Optional[str] = Query(None, description="Optional LLM provider preference: 'ollama' or 'groq'"),
+    db: Session = Depends(get_db)
+):
+    """Summarizes complaint using Ollama/Groq (or configured LLMProvider) and persists the summary."""
+    try:
+        return await complaint_service.summarize_and_store_complaint(
+            db=db,
+            complaint_id=complaint_id,
+            provider=provider
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/{complaint_id}/summary")
+def get_complaint_summary(complaint_id: int, db: Session = Depends(get_db)):
+    """Retrieves the stored summary of a complaint."""
+    c = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail=f"Complaint {complaint_id} not found")
+    return {
+        "complaint_id": c.id,
+        "ticket_number": c.ticket_number,
+        "summary": c.summary
+    }
+
+
 

@@ -84,3 +84,16 @@ export const getComplaintsSimilarTo = async (id, limit = 10, threshold = 0.40) =
   return response.data;
 };
 
+export const summarizeComplaint = async (id, provider = null) => {
+  const response = await apiClient.post(`/complaints/${id}/summarize`, null, {
+    params: provider ? { provider } : {}
+  });
+  return response.data;
+};
+
+export const getComplaintSummary = async (id) => {
+  const response = await apiClient.get(`/complaints/${id}/summary`);
+  return response.data;
+};
+
+

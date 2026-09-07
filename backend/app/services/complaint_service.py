@@ -14,6 +14,7 @@ from app.services.audit_service import audit_service
 from app.services.lifecycle_service import lifecycle_service
 from app.repositories.complaint_repository import complaint_repository
 from app.ai.duplicate_detector import duplicate_detector
+from app.ai.summarizer import summarizer
 
 class ComplaintService:
     @staticmethod
@@ -551,4 +552,73 @@ class ComplaintService:
             }
         }
 
+    @staticmethod
+    async def summarize_and_store_complaint(
+        db: Session,
+        complaint_id: int,
+        provider: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Summarizes an incoming complaint using Ollama/Groq and persists the summary."""
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        full_text = complaint.description or complaint.body or ""
+        subject = complaint.subject or "Customer Complaint"
+
+        summary_res = await summarizer.summarize(
+            subject=subject,
+            body=full_text,
+            provider_preference=provider
+        )
+
+        # Store summary in complaint record
+        complaint.summary = summary_res["summary"]
+        complaint.updated_at = datetime.utcnow()
+
+        # Store in AI responses table
+        ai_resp = (
+            db.query(AIResponse)
+            .filter(
+                AIResponse.complaint_id == complaint.id,
+                AIResponse.response_type == "SUMMARY"
+            )
+            .first()
+        )
+        if ai_resp:
+            ai_resp.content = summary_res["summary"]
+            ai_resp.provider = summary_res.get("provider", "LLMProvider")
+            ai_resp.created_at = datetime.utcnow()
+        else:
+            db.add(AIResponse(
+                complaint_id=complaint.id,
+                provider=summary_res.get("provider", "LLMProvider"),
+                model="Configured-LLM",
+                response_type="SUMMARY",
+                content=summary_res["summary"],
+                is_approved=True
+            ))
+
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=complaint.id,
+            event_type="AI_ANALYSIS_COMPLETED",
+            actor="SUMMARIZER",
+            description=f"Executive AI summary generated via {summary_res.get('provider')}",
+            event_metadata={"summary": summary_res["summary"]}
+        )
+
+        db.commit()
+        db.refresh(complaint)
+
+        return {
+            "complaint_id": complaint.id,
+            "ticket_number": complaint.ticket_number,
+            "summary": complaint.summary,
+            "key_points": summary_res.get("key_points", []),
+            "provider": summary_res.get("provider"),
+            "stored": True
+        }
+
 complaint_service = ComplaintService()
+
