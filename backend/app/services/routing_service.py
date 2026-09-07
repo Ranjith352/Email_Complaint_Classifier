@@ -58,6 +58,39 @@ class RoutingService:
     """
 
     # -------------------------------------------------------------------------
+    # Deterministic Confidence Tiers Evaluation
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def evaluate_confidence_tier(confidence: float) -> Dict[str, Any]:
+        """Evaluates confidence score against deterministic enterprise routing thresholds:
+        - >= 0.85: High confidence -> Automatically route (review_required = False)
+        - 0.60 - 0.84: Medium confidence -> Route provisionally (review_required = True)
+        - < 0.60: Low confidence -> Hold for review, do not finalize department (review_required = True)
+        """
+        conf = float(confidence)
+        if conf >= 0.85:
+            return {
+                "tier": "HIGH",
+                "action": "AUTO_ROUTE",
+                "review_required": False,
+                "finalize_department": True
+            }
+        elif conf >= 0.60:
+            return {
+                "tier": "MEDIUM",
+                "action": "PROVISIONAL_ROUTE",
+                "review_required": True,
+                "finalize_department": True
+            }
+        else:
+            return {
+                "tier": "LOW",
+                "action": "HOLD_FOR_REVIEW",
+                "review_required": True,
+                "finalize_department": False
+            }
+
+    # -------------------------------------------------------------------------
     # Stage 1-3: AI Classification -> Category -> Subcategory
     # -------------------------------------------------------------------------
     @staticmethod

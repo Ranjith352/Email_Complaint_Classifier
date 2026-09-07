@@ -60,6 +60,96 @@ async def ai_assistant_chat(req: AssistantChatRequest, db: Session = Depends(get
         "provider": llm.provider_name
     }
 
+
+class RecommendationsRequest(BaseModel):
+    complaint_text: str
+    category: str = "General"
+
+
+class RAGQueryRequest(BaseModel):
+    question: str
+    limit: int = 3
+
+
+class GenerateResponseRequest(BaseModel):
+    ticket_number: str
+    customer_name: Optional[str] = "Valued Customer"
+    subject: str
+    body: str
+    department: str
+    tone: Optional[str] = "Empathetic & Professional"
+
+
+class ExplainComplaintRequest(BaseModel):
+    subject: str
+    body: str
+    category: str = "General"
+    department: str = "Customer Support"
+    entities: Optional[list] = None
+
+
+class PolicyReasoningRequest(BaseModel):
+    complaint_text: str
+    category: str = "General"
+
+
+@router.post("/recommendations")
+async def generate_resolution_recommendations(req: RecommendationsRequest, db: Session = Depends(get_db)):
+    """2. Resolution recommendations: generates resolution steps grounded on company policies."""
+    return await rag_engine.generate_grounded_recommendation(
+        complaint_text=req.complaint_text,
+        category=req.category,
+        db=db
+    )
+
+
+@router.post("/rag/query")
+async def rag_question_answering(req: RAGQueryRequest, db: Session = Depends(get_db)):
+    """4. RAG question answering: answers user/agent questions using retrieved knowledge documents."""
+    return await rag_engine.answer_query(
+        question=req.question,
+        db=db,
+        limit=req.limit
+    )
+
+
+@router.post("/generate-response")
+async def generate_customer_response(req: GenerateResponseRequest):
+    """5. Customer response generation: drafts empathetic customer response email."""
+    from app.ai.response_generator import response_generator
+    return await response_generator.generate_draft(
+        ticket_number=req.ticket_number,
+        customer_name=req.customer_name or "Valued Customer",
+        subject=req.subject,
+        body=req.body,
+        department=req.department,
+        tone=req.tone or "Empathetic & Professional"
+    )
+
+
+@router.post("/explain")
+async def explain_complaint(req: ExplainComplaintRequest, db: Session = Depends(get_db)):
+    """6. Internal complaint explanation: provides internal technical diagnostic briefing for agents."""
+    return await rag_engine.explain_complaint(
+        subject=req.subject,
+        body=req.body,
+        category=req.category,
+        department=req.department,
+        entities=req.entities,
+        db=db
+    )
+
+
+@router.post("/reasoning")
+async def policy_reasoning(req: PolicyReasoningRequest, db: Session = Depends(get_db)):
+    """7. Reasoning over retrieved complaint/policy information: evaluates claim eligibility against policy terms."""
+    return await rag_engine.reason_over_complaint_and_policies(
+        complaint_text=req.complaint_text,
+        category=req.category,
+        db=db
+    )
+
+
 @router.get("/models")
 def get_model_versions(db: Session = Depends(get_db)):
     return db.query(ModelVersion).all()

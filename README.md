@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-112%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-115%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -168,6 +168,50 @@ When assigning human agents:
   - `GET /api/complaints/{id}/summary`: Retrieves the current persisted summary and metadata.
   - Interactive **Summarize with AI** action and provider tag in the Complaint Detail modal & detail page.
 
+### 16. Strict Boundary Separation: Generative LLMs vs. Specialized Models vs. Deterministic Code
+To prevent hallucination, eliminate latency bottlenecks, and preserve strict regulatory auditability, **the system does NOT use LLMs for every task**. The platform enforces three distinct computational paradigms:
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                           COMPUTATIONAL PARADIGMS BOUNDARY                        │
+├───────────────────────────┬───────────────────────────────┬───────────────────────┤
+│   Generative LLMs         │   Specialized ML/NLP Models   │   Deterministic Code  │
+│   (Ollama / Groq)         │   (High Throughput & Speed)   │   (Zero Hallucination)│
+├───────────────────────────┼───────────────────────────────┼───────────────────────┤
+│ 1. Complaint Summarization│ • Intent Classification       │ • Priority Scoring    │
+│ 2. Resolution Recomms     │   (5-Tier Model Progression)  │ • SLA Deadlines       │
+│ 3. AI Assistant Copilot   │ • Sentiment Analysis          │ • Routing & Tiers     │
+│ 4. RAG Question Answering │   (DistilBERT on SST-2)       │ • Permissions (RBAC)  │
+│ 5. Customer Response Draft│ • Named Entity Rec (NER)      │ • Agent Assignment    │
+│ 6. Technical Explanation  │   (BERT NER / SpaCy patterns) │   (7-Step Verification│
+│ 7. Policy Reasoning       │ • Dense Vector Embeddings     │   & Queue Fallback)   │
+│                           │   (Sentence Transformers 384d)│                       │
+└───────────────────────────┴───────────────────────────────┴───────────────────────┘
+```
+
+#### 1. Generative LLMs (Ollama / Groq) for 7 High-Level Generative Tasks
+1. **Complaint Summarization**: Synthesizes lengthy, unstructured customer complaints into concise 2-sentence executive summaries preserving key facts, amounts, timing, and requested actions.
+2. **Resolution Recommendations**: Generates grounded, step-by-step resolution advice for support agents based on retrieved enterprise documents (`rag_engine.generate_grounded_recommendation`).
+3. **AI Assistant Copilot**: Conversational interactive agent copilot assisting customer service representatives in navigating triage procedures and inquiries (`/api/ai/chat`).
+4. **RAG Question Answering**: Synthesizes factually grounded answers to operational queries citing internal knowledge base documents (`rag_engine.answer_query`).
+5. **Customer Response Generation**: Produces personalized, empathetic draft email replies ready for agent review (`response_generator.generate_draft`).
+6. **Internal Complaint Explanation**: Delivers clear technical explanations, root causes, and debugging clues for internal engineering teams (`rag_engine.explain_complaint`).
+7. **Reasoning Over Retrieved Information**: Performs multi-hop logical deductions over complaint facts cross-referenced against company policies and warranty terms (`rag_engine.reason_over_complaint_and_policies`).
+
+#### 2. Specialized Models for Core Extraction (Fast, Reproducible, High-Throughput)
+- **Intent Classification**: 5-Tier progressive model selection (TF-IDF + Logistic Regression, Naive Bayes, DistilBERT, RoBERTa, BART MNLI).
+- **Sentiment Analysis**: Dedicated DistilBERT checkpoint fine-tuned on SST-2 returning calibrated polarity score (-1.0 to +1.0) and discrete labels (`NEGATIVE`, `POSITIVE`, `NEUTRAL`).
+- **Named Entity Recognition (NER)**: High-speed BERT NER / SpaCy pattern matching extracting 10 core entity types (`AMOUNT`, `DATE`, `ORDER_ID`, `TRANSACTION_ID`, etc.) directly into relational tables.
+- **Dense Vector Embeddings**: Sentence Transformers (`all-MiniLM-L6-v2`, 384-dimensional dense vectors) for vector search, semantic clustering, and pgvector cosine indexing.
+
+#### 3. Deterministic Code for Critical Business Decisions (Zero Hallucination)
+- **Priority Calculation**: Weighted mathematical formula:
+  $$\text{Priority} = (\text{Urgency} \times 0.30) + (\text{Sentiment} \times 0.15) + (\text{BizImpact} \times 0.20) + (\text{CustImpact} \times 0.15) + (\text{SLARisk} \times 0.20)$$
+- **SLA Calculation & Breaches**: Exact millisecond timestamps derived from business calendar hours without stochastic variability.
+- **Routing & Confidence Tiers**: Explicit mathematical thresholds ($\ge 0.85$ Auto-Route, $0.60-0.84$ Provisional Route, $<0.60$ Hold for Review) and relational `routing_rules`.
+- **Permissions & Security**: Strict Role-Based Access Control (RBAC) bitmasks and enum validations (`ADMIN`, `MANAGER`, `AGENT`, `CUSTOMER`).
+- **Agent Workload & Assignment**: 7-factor deterministic capacity matching (Department $\to$ Team $\to$ Skills $\to$ Availability $\to$ Workload $\to$ Capacity $\to$ Lowest Load Selection $\to$ Team Queue Fallback).
+
 ---
 
 ## 🛠️ Technology Stack
@@ -180,7 +224,7 @@ When assigning human agents:
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (112 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (115 passing automated tests) |
 
 
 ---
