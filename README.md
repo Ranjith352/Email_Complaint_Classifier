@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-109%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-112%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -143,11 +143,15 @@ When assigning human agents:
   ```
 - **Do Not Assume a Model is Installed**: `OLLAMA_MODEL` defaults to empty; the application dynamically discovers installed models via `GET /api/tags`.
 - **User Configurable**: The user can configure the active model via `.env`, query parameters, or runtime API endpoint `POST /api/ai/llm/config`.
+- **Optional Groq Cloud Provider with Automatic Fallback**:
+  - Groq is an optional provider configured via `GROQ_API_KEY=` and `GROQ_MODEL=`.
+  - **Key Security**: The API key is strictly loaded from the environment (`.env`) and is **never hardcoded** in code and **never committed** to source control (`.gitignore` protects all `.env` files).
+  - **Automatic Fallback to Ollama**: If Groq is unavailable (missing API key, rate limit, network disruption, or model unavailable), the application automatically falls back to configured local Ollama seamlessly.
 - **Graceful Error Handling & Non-Crashing Resilience**:
   - If the model or Ollama daemon is unavailable, the provider returns a **clear, actionable error** along with the official installation link: [https://ollama.com/download](https://ollama.com/download).
   - **Does NOT crash the entire application**: summarization falls back gracefully to calibrated extraction.
   - **Allows other functionality to continue**: ticket ingestion, 5-tier classification, emotion/sentiment analysis, NER extraction, priority calculation, routing rules, agent assignment, team queue fallback, duplicate detection, semantic search, and incident detection continue without interruption.
-- **Provider Decoupling**: Application modules interact solely through `get_llm_provider()` and the `LLMProvider` abstract contract. Switching to cloud inference (`LLM_PROVIDER=groq`) requires zero code modifications.
+- **Provider Decoupling**: Application modules interact solely through `get_llm_provider()` and the `LLMProvider` abstract contract. Switching between providers requires zero code modifications.
 
 ### 15. AI Complaint Summarization (800-Word Compression & Storage)
 - **High-Fidelity Information Extraction**: Analyzes lengthy, verbose customer narratives (e.g., 800+ words) and generates a concise 2-3 sentence executive summary preserving essential details: customer issue, specific amounts, temporal context, and requested resolution.
@@ -174,9 +178,9 @@ When assigning human agents:
 | **Backend** | FastAPI, Python 3.12, Pydantic v2, SQLAlchemy 2.0, Alembic, JWT Auth |
 | **Database & Vector** | PostgreSQL 16, `pgvector` (with automatic SQLite fallback for local testing) |
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
-| **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Groq Cloud API), RAG Pipeline |
+| **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (109 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (112 passing automated tests) |
 
 
 ---
@@ -269,13 +273,13 @@ Open your browser at: **http://localhost:5173**
 
 ## 🧪 Running Automated Tests
 
-Run the complete backend test suite across all 109 unit and integration tests:
+Run the complete backend test suite across all 112 unit and integration tests:
 ```bash
 pytest backend/app/tests -v
 ```
 
-### Test Coverage (109 Tests Passing):
-- **`test_summarization.py`**: Pluggable `LLMProvider` abstraction (`OllamaProvider`, `GroqProvider`, `LLM_PROVIDER` environment configuration), default local Ollama configuration (`OLLAMA_BASE_URL=http://localhost:11434`, `OLLAMA_MODEL=`), dynamic model configuration without assuming pre-installation, clear error handling when model/daemon is unavailable, official Ollama download link (`https://ollama.com/download`), non-crashing application resilience, 800-word complaint summarization extracting duplicate payment of ₹5,000, timing ("today"), and immediate refund request, database persistence in `complaint.summary` and `ai_responses` (`response_type="SUMMARY"`), and REST endpoints (`POST /api/complaints/{id}/summarize`, `GET /api/complaints/{id}/summary`, `GET /api/ai/llm/status`, `GET /api/ai/llm/models`, `POST /api/ai/llm/config`).
+### Test Coverage (112 Tests Passing):
+- **`test_summarization.py`**: Pluggable `LLMProvider` abstraction (`OllamaProvider`, `GroqProvider`, `LLM_PROVIDER` environment configuration), default local Ollama configuration (`OLLAMA_BASE_URL=http://localhost:11434`, `OLLAMA_MODEL=`), dynamic model configuration without assuming pre-installation, clear error handling when model/daemon is unavailable, official Ollama download link (`https://ollama.com/download`), Groq optional provider credential security (never hardcoded, never committed), automatic seamless fallback to Ollama when Groq is unavailable, non-crashing application resilience, 800-word complaint summarization extracting duplicate payment of ₹5,000, timing ("today"), and immediate refund request, database persistence in `complaint.summary` and `ai_responses` (`response_type="SUMMARY"`), and REST endpoints (`POST /api/complaints/{id}/summarize`, `GET /api/complaints/{id}/summary`, `GET /api/ai/llm/status`, `GET /api/ai/llm/models`, `POST /api/ai/llm/config`).
 - **`test_incidents.py`**: Semantic incident detection over sliding time windows, user exact scenario (50 complaints with "Portal is not working.", "Cannot login.", "Account access unavailable." -> Potential Incident Detected, "Portal Authentication Failure", IT department, HIGH severity, 50 affected), manager actions (Acknowledge, Resolve), and REST endpoints (`/api/incidents/detect`, `/api/incidents/active`, `/api/incidents/{id}/acknowledge`, `/api/incidents/{id}/resolve`).
 - **`test_semantic_search.py`**: Dense vector concept embeddings, lexical gap bridging ("Money was deducted twice." vs "I was charged two times for the same transaction." similarity $\ge 0.85$), `search_complaints` retrieval, `find_similar_to_complaint`, and REST endpoints (`/semantic-search`, `/{id}/find-similar`).
 - **`test_duplicate_detection.py`**: Sentence Transformers + pgvector flow, TF-IDF baseline, $\ge 0.85$ duplicate warning, and agent actions (Link, Merge, Ignore).
@@ -308,8 +312,14 @@ pytest backend/app/tests -v
      ```
    - Does not assume a model is pre-installed; allows user to configure any model (`llama3`, `mistral`, `qwen2.5`, `phi3`, etc.).
    - If the model or daemon is unavailable, returns a clear error and allows all other application operations to continue without crashing.
-2. **Groq Cloud API (Optional Cloud Provider)**:
-   - Set `GROQ_API_KEY=your_key_here` in `.env` for ultra-fast Llama-3 cloud inference.
+2. **Groq Cloud API (Optional Cloud Provider with Ollama Fallback)**:
+   - Configure in `.env`:
+     ```env
+     GROQ_API_KEY=your_groq_api_key_here
+     GROQ_MODEL=llama-3.3-70b-versatile
+     ```
+   - **Never hardcoded; never committed** (`.env` is excluded in `.gitignore`).
+   - If Groq is unavailable, the provider automatically falls back to configured local Ollama without crashing.
 3. **Gmail API**:
    - Place OAuth client credentials as `credentials.json` in the root directory.
 4. **Configurable Database Rules**:

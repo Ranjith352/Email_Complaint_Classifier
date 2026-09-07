@@ -140,7 +140,11 @@ class LLMProvider(ABC):
         }
 
 
-def get_llm_provider(provider_type: Optional[str] = None, model: Optional[str] = None) -> LLMProvider:
+def get_llm_provider(
+    provider_type: Optional[str] = None,
+    model: Optional[str] = None,
+    api_key: Optional[str] = None
+) -> LLMProvider:
     """Returns configured LLM provider instance based on LLM_PROVIDER ('ollama' or 'groq').
     The rest of the application interacts strictly through the LLMProvider interface.
     """
@@ -150,7 +154,7 @@ def get_llm_provider(provider_type: Optional[str] = None, model: Optional[str] =
     target = (provider_type or settings.LLM_PROVIDER or "ollama").strip().lower()
 
     if target == "groq":
-        return GroqProvider()
+        return GroqProvider(api_key=api_key, model=model)
     elif target == "ollama":
         return OllamaProvider(model=model)
     else:

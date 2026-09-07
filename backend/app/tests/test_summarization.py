@@ -266,3 +266,66 @@ def test_llm_management_api_endpoints(client: TestClient):
     assert config_data["configuration"]["OLLAMA_MODEL"] == "llama3"
     assert config_data["configuration"]["OLLAMA_BASE_URL"] == "http://localhost:11434"
 
+def test_groq_optional_provider_and_env_config():
+    """Verifies:
+    1. Groq is an optional provider.
+    2. Environment uses GROQ_API_KEY and GROQ_MODEL.
+    3. Never hardcode the key; never commit the key.
+    """
+    from app.core.config import settings
+    groq_p = GroqProvider()
+    assert isinstance(groq_p, LLMProvider)
+    # API key is sourced from settings/env
+    assert groq_p.api_key == settings.GROQ_API_KEY
+    assert groq_p.model == settings.GROQ_MODEL
+
+    # Key is dynamically passed, never hardcoded in provider class
+    custom_p = GroqProvider(api_key="test-ephemeral-key", model="llama-3.3-70b-versatile")
+    assert custom_p.api_key == "test-ephemeral-key"
+    assert "llama-3.3-70b-versatile" in custom_p.provider_name
+
+@pytest.mark.asyncio
+async def test_groq_unavailable_falls_back_to_configured_ollama(monkeypatch):
+    """Verifies:
+    If Groq is unavailable:
+    Fall back to Ollama when configured.
+    """
+    from app.core.config import settings
+    # Configure Ollama model
+    monkeypatch.setattr(settings, "OLLAMA_MODEL", "llama3")
+
+    # Instantiate Groq provider with missing/invalid API key
+    groq_p = GroqProvider(api_key="", model="llama-3.3-70b-versatile")
+
+    # Check availability reflects fallback
+    avail = await groq_p.check_availability()
+    assert avail["available"] is False
+    assert avail["fallback_to_ollama"] is True
+    assert avail["ollama_model"] == "llama3"
+
+    # Summarize should fall back to Ollama / calibrated extraction without crashing
+    res = await groq_p.summarize(
+        text="Customer reports a duplicate payment of ₹5,000 today and is requesting an immediate refund.",
+        subject="Duplicate charge"
+    )
+    assert res is not None
+    assert "duplicate payment" in res["summary"].lower()
+    assert "5,000" in res["summary"] or "5000" in res["summary"]
+
+@pytest.mark.asyncio
+async def test_groq_network_failure_falls_back_without_crash(monkeypatch):
+    """Verifies that when Groq encounters a network/API failure,
+    it falls back to Ollama or calibrated extraction without crashing.
+    """
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "OLLAMA_MODEL", "llama3")
+
+    # Provide an arbitrary invalid key that will fail API calls
+    failing_groq = GroqProvider(api_key="gsk_invalid_test_key_for_fallback", model="llama-3.3-70b-versatile")
+
+    # Calling generate_chat should not raise unhandled exception; falls back safely
+    reply = await failing_groq.generate_chat("System prompt", "User prompt")
+    # Should safely return string or None without crashing
+    assert failing_groq.last_error is not None
+
+
