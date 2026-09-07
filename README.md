@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-120%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-126%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -264,9 +264,44 @@ Grounded Answer (Verifiable answers with direct chunk citations and provider met
 #### 3. Out-of-the-Box Pre-Seeding & Frontend Studio
 - **Pre-Seeded Corpus**: Automatically seeds all 9 official policies into `knowledge_documents` and `knowledge_chunks` on first database startup.
 - **Frontend Studio (`/knowledge-base`)**:
-  - **Documents Library**: Filter by the 9 policy types with chunk count badges, search, and delete actions.
-  - **Document Ingestion Studio**: Drag-and-drop file upload with animated visual pipeline progress (Upload $\to$ Extract $\to$ Clean $\to$ Chunk $\to$ MiniLM $\to$ pgvector).
+  - **Documents Library**: Filter by the 9 policy types with chunk count badges, search, view, edit, re-index, and delete actions.
+  - **Document Ingestion Studio**: Drag-and-drop file upload with custom document name, department, and author tags, plus animated visual pipeline progress (Upload $\to$ Extract $\to$ Clean $\to$ Chunk $\to$ MiniLM $\to$ pgvector).
   - **RAG Q&A Playground**: Interactive Q&A interface with sample query chips, real-time vector retrieval, cited chunk snippets, and grounded answers from Ollama/Groq.
+
+#### 4. Admin Knowledge Base Lifecycle & Separate Storage Architecture
+Enterprise knowledge base administration provides full lifecycle control over operational documents with decoupled chunk and embedding storage:
+
+- **Admin Operations**:
+  - **Upload Documents (`POST /api/knowledge/upload`, `POST /api/knowledge`)**: Ingests policy files (.txt, .md, .pdf, .json) or raw text with metadata attribution (`document_name`, `document_type`, `department`, `uploaded_by`).
+  - **View Documents (`GET /api/knowledge/{id}`)**: Inspects comprehensive document details, version history, raw text, granular chunks, token counts, and linked embedding IDs.
+  - **Delete Documents (`DELETE /api/knowledge/{id}`)**: Cascades deletion across document records, associated text chunks, and vector embeddings.
+  - **Update Documents (`PUT /api/knowledge/{id}`)**: Modifies document name, department, or content. Automatically increments the revision `version` (`v1` $\to$ `v2`) and triggers asynchronous or synchronous re-indexing.
+  - **Re-index Documents (`POST /api/knowledge/{id}/reindex`)**: Re-cleans, re-chunks, and recalculates Sentence Transformer dense embeddings on-demand, bumping document version.
+- **Stored Metadata Fields**:
+  - `document_name`: Canonical business title of the knowledge document.
+  - `document_type`: Standardized policy category (e.g., Refund Policy, Billing Policy, SLA Policy).
+  - `department`: Target operational department (`General`, `Finance`, `Support`, `IT`, `HR`, `Security`).
+  - `version`: Monotonically increasing revision counter tracking modifications.
+  - `uploaded_by`: User or administrator principal who ingested the document (`Admin`, etc.).
+  - `created_at`: ISO UTC timestamp of initial document ingestion.
+- **Separate 3-Tier Storage Architecture**:
+  ```
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                    SEPARATE KNOWLEDGE STORAGE TIERS                   │
+  ├──────────────────────┬──────────────────────┬──────────────────────────┤
+  │ knowledge_documents  │ knowledge_chunks     │ chunk_embeddings         │
+  ├──────────────────────┼──────────────────────┼──────────────────────────┤
+  │ • id (UUID / PK)     │ • id (UUID / PK)     │ • id (UUID / PK)         │
+  │ • document_name      │ • document_id (FK)   │ • chunk_id (FK)          │
+  │ • document_type      │ • chunk_index        │ • document_id (FK)       │
+  │ • department         │ • chunk_text         │ • embedding (Vector 384) │
+  │ • version            │ • token_count        │ • model_name (MiniLM-L6) │
+  │ • uploaded_by        │ • created_at         │ • dimension (384)        │
+  │ • raw_text           │                      │ • created_at             │
+  │ • created_at         │                      │                          │
+  └──────────────────────┴──────────────────────┴──────────────────────────┘
+  ```
+  Decoupling `chunk_embeddings` from `knowledge_chunks` allows vector re-indexing without altering raw text or chunk segmentation, supports model migrations without schema rewrites, and maintains clean database normalization.
 
 ---
 
@@ -280,7 +315,7 @@ Grounded Answer (Verifiable answers with direct chunk citations and provider met
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (120 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (126 passing automated tests) |
 
 
 ---

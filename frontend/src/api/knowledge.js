@@ -20,6 +20,16 @@ export const createKnowledgeDocument = async (docData) => {
   return res.data;
 };
 
+export const updateKnowledgeDocument = async (id, docData) => {
+  const res = await apiClient.put(`/knowledge/${id}`, docData);
+  return res.data;
+};
+
+export const reindexKnowledgeDocument = async (id) => {
+  const res = await apiClient.post(`/knowledge/${id}/reindex`);
+  return res.data;
+};
+
 export const uploadDocumentFile = async (formData) => {
   const res = await apiClient.post('/knowledge/upload', formData, {
     headers: {

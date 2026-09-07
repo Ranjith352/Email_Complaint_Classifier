@@ -1,8 +1,9 @@
 import re
 import logging
+from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
-from app.models.knowledge import KnowledgeDocument, KnowledgeChunk
+from app.models.knowledge import KnowledgeDocument, KnowledgeChunk, ChunkEmbedding
 from app.ai.embeddings import embeddings_engine
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ SEED_POLICIES = [
         "title": "Corporate Refund & Reversal Policy",
         "document_type": "REFUND_POLICY",
         "category": "Billing / Payment",
+        "department": "Finance",
         "content_text": """# Corporate Refund & Reversal Policy
 
 ## 1. Overview and Scope
@@ -105,6 +107,7 @@ Agents must verify:
         "title": "Customer Billing & Subscription Policy",
         "document_type": "BILLING_POLICY",
         "category": "Billing / Payment",
+        "department": "Finance",
         "content_text": """# Customer Billing & Subscription Policy
 
 ## 1. Billing Cycles & Invoicing
@@ -124,6 +127,7 @@ All recurring service charges are billed on the 1st day of the calendar month or
         "title": "Customer Support Standard Operating Procedure (SOP)",
         "document_type": "CUSTOMER_SUPPORT_SOP",
         "category": "Customer Support",
+        "department": "Customer Support",
         "content_text": """# Customer Support Standard Operating Procedure (SOP)
 
 ## 1. Customer Interaction & Etiquette Guidelines
@@ -145,6 +149,7 @@ Customer service representatives represent AutoTriage AI and must adhere to empa
         "title": "Service Level Agreement (SLA) & Response Policy",
         "document_type": "SLA_POLICY",
         "category": "Operations & Admin",
+        "department": "Customer Support",
         "content_text": """# Service Level Agreement (SLA) & Response Policy
 
 ## 1. Priority Tiers and Response Targets
@@ -173,6 +178,7 @@ When tickets reach 75% of their SLA deadline without first response or resolutio
         "title": "Incident Escalation & Hierarchy Policy",
         "document_type": "ESCALATION_POLICY",
         "category": "Operations & Admin",
+        "department": "Customer Support",
         "content_text": """# Incident Escalation & Hierarchy Policy
 
 ## 1. Escalation Thresholds
@@ -197,6 +203,7 @@ The escalating agent must summarize:
         "title": "IT Application & Infrastructure Troubleshooting Guide",
         "document_type": "IT_TROUBLESHOOTING_GUIDE",
         "category": "Technical Problem",
+        "department": "IT Support",
         "content_text": """# IT Application & Infrastructure Troubleshooting Guide
 
 ## 1. Web Portal 500 Internal Server Errors & Authentication Failures
@@ -218,6 +225,7 @@ The escalating agent must summarize:
         "title": "Information Security & Data Privacy Policy",
         "document_type": "SECURITY_POLICY",
         "category": "Security Issue",
+        "department": "Security & Compliance",
         "content_text": """# Information Security & Data Privacy Policy
 
 ## 1. Data Protection & Confidentiality
@@ -236,6 +244,7 @@ Upon report or suspicion of unauthorized account access:
         "title": "Human Resources Workplace & Agent Conduct Policy",
         "document_type": "HR_POLICY",
         "category": "Human Resources",
+        "department": "Human Resources",
         "content_text": """# Human Resources Workplace & Agent Conduct Policy
 
 ## 1. Agent Workload & Wellness Standards
@@ -256,6 +265,7 @@ To ensure consistent support quality and employee well-being:
         "title": "Corporate Finance & Fiscal Governance Policy",
         "document_type": "FINANCE_POLICY",
         "category": "Finance Ops",
+        "department": "Finance",
         "content_text": """# Corporate Finance & Fiscal Governance Policy
 
 ## 1. Financial Authorization Matrix
@@ -273,25 +283,23 @@ Disbursements, compensation payments, and goodwill refunds must satisfy internal
 ]
 
 class KnowledgeService:
-    """Enterprise RAG Knowledge Base Service implementing the 9-stage pipeline:
-    Document Upload -> Text Extraction -> Cleaning -> Chunking -> Sentence Transformer ->
-    Embedding -> pgvector -> Semantic Retrieval -> Relevant Context -> Ollama/Groq -> Grounded Answer.
+    """Enterprise RAG Knowledge Base Service implementing Admin Lifecycle & Separate Storage:
+    1. Document Upload, View, Update, Delete, Re-index
+    2. Store metadata: document name, document type, department, version, uploaded_by, created_at
+    3. Separate storage: KnowledgeDocument (metadata) | KnowledgeChunk (text chunks) | ChunkEmbedding (vectors).
     """
 
     @staticmethod
     def get_supported_document_types() -> List[Dict[str, str]]:
-        """Returns the 9 officially supported document types."""
         return SUPPORTED_DOCUMENT_TYPES
 
     @staticmethod
     def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
-        """Stage 2: Text Extraction from raw uploaded file bytes (.txt, .md, .json, .csv, plain text)."""
         if not file_bytes:
             return ""
 
         fn_lower = filename.lower()
         try:
-            # Decode text from UTF-8 or Latin-1
             text = file_bytes.decode("utf-8")
         except UnicodeDecodeError:
             try:
@@ -300,7 +308,6 @@ class KnowledgeService:
                 logger.warning(f"Error decoding file {filename}: {e}")
                 text = str(file_bytes)
 
-        # Basic JSON unwrapping if file is JSON
         if fn_lower.endswith(".json"):
             try:
                 import json
@@ -316,26 +323,14 @@ class KnowledgeService:
 
     @staticmethod
     def clean_text(raw_text: str) -> str:
-        """Stage 3: Cleaning text - normalizes whitespace and removes noise while preserving
-        markdown section titles, bullet lists, numeric tables, and legal/policy codes.
-        """
         if not raw_text:
             return ""
 
-        # Normalize line endings
         text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
-
-        # Strip unprintable control characters except tabs and newlines
         text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', text)
-
-        # Replace excessive consecutive newlines with double newline (paragraph boundary)
         text = re.sub(r'\n{3,}', '\n\n', text)
-
-        # Normalize horizontal whitespace (multiple spaces/tabs to single space) on each line
         lines = [re.sub(r'[ \t]+', ' ', line).strip() for line in text.split('\n')]
-        cleaned = '\n'.join(lines).strip()
-
-        return cleaned
+        return '\n'.join(lines).strip()
 
     @staticmethod
     def chunk_text(
@@ -343,17 +338,12 @@ class KnowledgeService:
         chunk_size: int = 500,
         chunk_overlap: int = 80
     ) -> List[str]:
-        """Stage 4: Semantic Chunking with sliding overlap.
-        Splits text into logical chunks respecting sentence and paragraph boundaries.
-        """
         if not text:
             return []
 
-        # If text is already shorter than chunk size, return single chunk
         if len(text) <= chunk_size:
             return [text]
 
-        # Break text by paragraphs or double newlines first
         paragraphs = text.split("\n\n")
         chunks = []
         current_chunk = ""
@@ -363,10 +353,8 @@ class KnowledgeService:
             if not p:
                 continue
 
-            # If adding paragraph exceeds chunk size, try splitting sentences
             if len(current_chunk) + len(p) + 2 > chunk_size and len(current_chunk) >= (chunk_size - chunk_overlap):
                 chunks.append(current_chunk.strip())
-                # Sliding overlap: carry over trailing words
                 overlap_text = current_chunk[-chunk_overlap:].strip()
                 current_chunk = overlap_text + " " + p if overlap_text else p
             else:
@@ -375,11 +363,9 @@ class KnowledgeService:
         if current_chunk.strip():
             chunks.append(current_chunk.strip())
 
-        # Fallback if any single chunk is excessively large (no paragraph breaks)
         final_chunks = []
         for c in chunks:
             if len(c) > (chunk_size * 2):
-                # Split by sentence boundaries (.!?)
                 sentences = re.split(r'(?<=[.!?])\s+', c)
                 sub_chunk = ""
                 for s in sentences:
@@ -399,97 +385,220 @@ class KnowledgeService:
     def ingest_document(
         cls,
         db: Session,
-        title: str,
-        document_type: str,
-        content_text: str,
+        title: Optional[str] = None,
+        document_name: Optional[str] = None,
+        document_type: str = "REFUND_POLICY",
+        content_text: str = "",
         category: Optional[str] = None,
-        department_id: Optional[int] = None
+        department: Optional[str] = None,
+        department_id: Optional[int] = None,
+        uploaded_by: str = "Admin",
+        version: int = 1
     ) -> KnowledgeDocument:
-        """Executes the complete ingestion pipeline:
-        Cleaning -> Chunking -> Sentence Transformer -> Embedding -> pgvector/DB Persistence.
-        """
+        """Upload & Ingestion Pipeline storing Document, Chunks, and Embeddings separately."""
+        final_name = (document_name or title or "Untitled Document").strip()
+
         # Step 1: Clean
         cleaned = cls.clean_text(content_text)
 
         # Step 2: Chunk
         chunks = cls.chunk_text(cleaned, chunk_size=500, chunk_overlap=80)
         if not chunks:
-            chunks = [cleaned[:500] if cleaned else title]
+            chunks = [cleaned[:500] if cleaned else final_name]
 
-        # Step 3 & 4: Sentence Transformer Embeddings for Chunks (384-d dense vector)
-        doc_header = f"{title} [{document_type}]"
+        # Resolve category & department
+        resolved_category = category
+        resolved_department = department
+        if not resolved_category or not resolved_department:
+            for s in SUPPORTED_DOCUMENT_TYPES:
+                if s["type"] == document_type:
+                    resolved_category = resolved_category or s["category"]
+                    resolved_department = resolved_department or s["department"]
+                    break
+        resolved_category = resolved_category or "Corporate Policy"
+        resolved_department = resolved_department or "General"
+
+        # Step 3: Document Header Embedding
+        doc_header = f"{final_name} [{document_type}] ({resolved_department})"
         primary_chunk = chunks[0]
         primary_vector = embeddings_engine.get_embedding(f"{doc_header}\n{primary_chunk}")
 
-        # Resolve category and department defaults if not provided
-        resolved_category = category
-        if not resolved_category:
-            for s in SUPPORTED_DOCUMENT_TYPES:
-                if s["type"] == document_type:
-                    resolved_category = s["category"]
-                    break
-        resolved_category = resolved_category or "Corporate Policy"
-
-        # Step 5: pgvector/DB Persistence for Document Header
+        # Step 4: Persist KnowledgeDocument (metadata & raw text)
         doc = KnowledgeDocument(
-            title=title,
+            title=final_name,
             category=resolved_category,
             document_type=document_type,
+            department=resolved_department,
+            department_id=department_id,
+            version=version,
+            uploaded_by=uploaded_by or "Admin",
             content_text=cleaned,
             chunk_index=0,
             chunk_text=primary_chunk,
             embedding=primary_vector,
-            department_id=department_id,
             is_active=True
         )
         db.add(doc)
         db.commit()
         db.refresh(doc)
 
-        # Persist granular KnowledgeChunk records with individual 384d embeddings
-        chunk_objects = []
+        # Step 5 & 6: Persist KnowledgeChunks and ChunkEmbeddings separately
         for idx, chunk_str in enumerate(chunks):
-            chunk_vector = embeddings_engine.get_embedding(f"{doc_header}\n{chunk_str}")
             chunk_obj = KnowledgeChunk(
                 document_id=doc.id,
                 chunk_index=idx,
                 chunk_text=chunk_str,
-                embedding=chunk_vector,
-                token_count=len(chunk_str.split())
+                token_count=len(chunk_str.split()),
+                embedding=None  # Maintained as None in chunks table; stored in dedicated ChunkEmbedding
             )
-            chunk_objects.append(chunk_obj)
+            db.add(chunk_obj)
+            db.commit()
+            db.refresh(chunk_obj)
 
-        db.add_all(chunk_objects)
+            # Generate 384d vector and store in dedicated ChunkEmbedding table
+            chunk_vector = embeddings_engine.get_embedding(f"{doc_header}\n{chunk_str}")
+            chunk_obj.embedding = chunk_vector  # keep on chunk for transparent backwards compatibility
+            
+            chunk_emb = ChunkEmbedding(
+                chunk_id=chunk_obj.id,
+                document_id=doc.id,
+                embedding=chunk_vector,
+                model_name="all-MiniLM-L6-v2",
+                dimension=384
+            )
+            db.add(chunk_emb)
+
         db.commit()
         db.refresh(doc)
+        logger.info(f"Ingested '{final_name}' v{doc.version} by '{doc.uploaded_by}' with {len(chunks)} chunks and separate embeddings.")
+        return doc
 
-        logger.info(f"Ingested KnowledgeDocument '{title}' ({document_type}) with {len(chunks)} chunks.")
+    @classmethod
+    def update_document(
+        cls,
+        db: Session,
+        doc_id: int,
+        document_name: Optional[str] = None,
+        title: Optional[str] = None,
+        document_type: Optional[str] = None,
+        category: Optional[str] = None,
+        department: Optional[str] = None,
+        content_text: Optional[str] = None,
+        uploaded_by: Optional[str] = None,
+        reindex: bool = True
+    ) -> KnowledgeDocument:
+        """Admin Update: Updates document metadata and content, optionally re-indexing chunks and embeddings."""
+        doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
+        if not doc:
+            raise ValueError("Knowledge document not found")
+
+        new_name = (document_name or title)
+        if new_name:
+            doc.title = new_name.strip()
+        if document_type:
+            doc.document_type = document_type
+        if category:
+            doc.category = category
+        if department:
+            doc.department = department
+        if uploaded_by:
+            doc.uploaded_by = uploaded_by
+
+        content_changed = False
+        if content_text is not None and content_text.strip() != doc.content_text.strip():
+            doc.content_text = content_text
+            content_changed = True
+
+        doc.version += 1
+        doc.updated_at = datetime.utcnow()
+        db.commit()
+
+        if reindex or content_changed:
+            cls.reindex_document(db, doc.id, bump_version=False)
+
+        db.refresh(doc)
+        return doc
+
+    @classmethod
+    def reindex_document(cls, db: Session, doc_id: int, bump_version: bool = True) -> KnowledgeDocument:
+        """Admin Re-index: Cleans text, re-chunks, recalculates Sentence Transformer vectors,
+        refreshes dedicated ChunkEmbedding table, and optionally increments document version.
+        """
+        doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
+        if not doc:
+            raise ValueError("Knowledge document not found")
+
+        # Delete existing separate embeddings and chunks for this document
+        db.query(ChunkEmbedding).filter(ChunkEmbedding.document_id == doc.id).delete()
+        db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == doc.id).delete()
+        db.commit()
+
+        # Re-clean and re-chunk
+        cleaned = cls.clean_text(doc.content_text)
+        doc.content_text = cleaned
+        chunks = cls.chunk_text(cleaned, chunk_size=500, chunk_overlap=80)
+        if not chunks:
+            chunks = [cleaned[:500] if cleaned else doc.title]
+
+        doc_header = f"{doc.title} [{doc.document_type}] ({doc.department})"
+        doc.chunk_text = chunks[0]
+        doc.embedding = embeddings_engine.get_embedding(f"{doc_header}\n{chunks[0]}")
+
+        if bump_version:
+            doc.version += 1
+        doc.updated_at = datetime.utcnow()
+        db.commit()
+
+        # Recreate chunks and separate embeddings
+        for idx, chunk_str in enumerate(chunks):
+            chunk_obj = KnowledgeChunk(
+                document_id=doc.id,
+                chunk_index=idx,
+                chunk_text=chunk_str,
+                token_count=len(chunk_str.split()),
+                embedding=None
+            )
+            db.add(chunk_obj)
+            db.commit()
+            db.refresh(chunk_obj)
+
+            chunk_vector = embeddings_engine.get_embedding(f"{doc_header}\n{chunk_str}")
+            chunk_obj.embedding = chunk_vector
+
+            chunk_emb = ChunkEmbedding(
+                chunk_id=chunk_obj.id,
+                document_id=doc.id,
+                embedding=chunk_vector,
+                model_name="all-MiniLM-L6-v2",
+                dimension=384
+            )
+            db.add(chunk_emb)
+
+        db.commit()
+        db.refresh(doc)
+        logger.info(f"Re-indexed KnowledgeDocument '{doc.title}' to v{doc.version} with {len(chunks)} chunks and embeddings.")
         return doc
 
     @classmethod
     def seed_default_knowledge_base(cls, db: Session) -> int:
-        """Seeds the 9 official enterprise policy documents if they are not already present."""
-        existing_titles = {d.title for d in db.query(KnowledgeDocument.title).all()}
+        """Seeds the 9 official enterprise policy documents with separate chunks and embeddings."""
         seeded_count = 0
 
         for pol in SEED_POLICIES:
             existing_doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.title == pol["title"]).first()
             if existing_doc:
+                # Ensure department, version, and uploaded_by are set
+                if not existing_doc.department:
+                    existing_doc.department = pol.get("department", "General")
+                if not existing_doc.uploaded_by:
+                    existing_doc.uploaded_by = "System Seed"
+                db.commit()
+
+                # Verify chunks and separate embeddings exist
                 c_count = db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == existing_doc.id).count()
-                if c_count == 0:
-                    cleaned = cls.clean_text(existing_doc.content_text)
-                    chunks = cls.chunk_text(cleaned, chunk_size=500, chunk_overlap=80)
-                    doc_header = f"{existing_doc.title} [{existing_doc.document_type}]"
-                    for idx, chunk_str in enumerate(chunks):
-                        chunk_vector = embeddings_engine.get_embedding(f"{doc_header}\n{chunk_str}")
-                        db.add(KnowledgeChunk(
-                            document_id=existing_doc.id,
-                            chunk_index=idx,
-                            chunk_text=chunk_str,
-                            embedding=chunk_vector,
-                            token_count=len(chunk_str.split())
-                        ))
-                    db.commit()
+                e_count = db.query(ChunkEmbedding).filter(ChunkEmbedding.document_id == existing_doc.id).count()
+                if c_count == 0 or e_count == 0:
+                    cls.reindex_document(db, existing_doc.id, bump_version=False)
                 continue
 
             cls.ingest_document(
@@ -497,7 +606,10 @@ class KnowledgeService:
                 title=pol["title"],
                 document_type=pol["document_type"],
                 content_text=pol["content_text"],
-                category=pol["category"]
+                category=pol["category"],
+                department=pol.get("department", "General"),
+                uploaded_by="System Seed",
+                version=1
             )
             seeded_count += 1
 
@@ -514,11 +626,13 @@ class KnowledgeService:
         min_similarity: float = 0.35,
         document_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Stage 7: Semantic Retrieval across granular chunks using Sentence Transformer cosine similarity."""
+        """Semantic Retrieval across separate ChunkEmbedding records."""
         query_vector = embeddings_engine.get_embedding(query)
 
-        # Query active chunks joined with parent document
-        q = db.query(KnowledgeChunk, KnowledgeDocument).join(
+        # Primary: Join ChunkEmbedding with KnowledgeChunk and KnowledgeDocument
+        q = db.query(ChunkEmbedding, KnowledgeChunk, KnowledgeDocument).join(
+            KnowledgeChunk, ChunkEmbedding.chunk_id == KnowledgeChunk.id
+        ).join(
             KnowledgeDocument, KnowledgeChunk.document_id == KnowledgeDocument.id
         ).filter(KnowledgeDocument.is_active == True)
 
@@ -528,21 +642,50 @@ class KnowledgeService:
         results = q.all()
         scored = []
 
-        for chunk, doc in results:
-            if not chunk.embedding:
+        for emb, chunk, doc in results:
+            if not emb.embedding:
                 continue
-            sim = embeddings_engine.cosine_similarity(query_vector, chunk.embedding)
+            sim = embeddings_engine.cosine_similarity(query_vector, emb.embedding)
             if sim >= min_similarity:
                 scored.append({
                     "chunk_id": chunk.id,
                     "document_id": doc.id,
                     "document_title": doc.title,
+                    "document_name": doc.title,
                     "document_type": doc.document_type,
+                    "department": doc.department,
+                    "version": doc.version,
                     "category": doc.category,
                     "chunk_index": chunk.chunk_index,
                     "chunk_text": chunk.chunk_text,
                     "similarity_score": round(sim, 4)
                 })
+
+        # Fallback if separate embeddings table not populated yet
+        if not scored:
+            q_chunk = db.query(KnowledgeChunk, KnowledgeDocument).join(
+                KnowledgeDocument, KnowledgeChunk.document_id == KnowledgeDocument.id
+            ).filter(KnowledgeDocument.is_active == True)
+            if document_type:
+                q_chunk = q_chunk.filter(KnowledgeDocument.document_type == document_type)
+            for chunk, doc in q_chunk.all():
+                if not chunk.embedding:
+                    continue
+                sim = embeddings_engine.cosine_similarity(query_vector, chunk.embedding)
+                if sim >= min_similarity:
+                    scored.append({
+                        "chunk_id": chunk.id,
+                        "document_id": doc.id,
+                        "document_title": doc.title,
+                        "document_name": doc.title,
+                        "document_type": doc.document_type,
+                        "department": doc.department,
+                        "version": doc.version,
+                        "category": doc.category,
+                        "chunk_index": chunk.chunk_index,
+                        "chunk_text": chunk.chunk_text,
+                        "similarity_score": round(sim, 4)
+                    })
 
         scored.sort(key=lambda x: x["similarity_score"], reverse=True)
         return scored[:limit]
