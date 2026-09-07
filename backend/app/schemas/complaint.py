@@ -175,3 +175,21 @@ class DuplicateSearchResponse(BaseModel):
     similar_complaints: List[Dict[str, Any]] = []
     baseline_tfidf: Optional[Dict[str, Any]] = None
 
+class SemanticSearchResultItem(BaseModel):
+    id: int
+    ticket_number: str
+    subject: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+    department_id: Optional[int] = None
+    status: Optional[str] = None
+    similarity_score: float
+    is_duplicate: bool = False
+    display_badge: Optional[str] = None
+
+class SemanticSearchResponse(BaseModel):
+    query: str
+    total_results: int
+    results: List[SemanticSearchResultItem] = []
+
+

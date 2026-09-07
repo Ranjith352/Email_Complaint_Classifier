@@ -16,16 +16,37 @@ from app.schemas.complaint import (
     EscalateRequest, SendResponseRequest, StatusTransitionRequest,
     ComplaintEventResponse, ComplaintEntityResponse, ComplaintReviewRequest,
     ComplaintLinkRequest, ComplaintMergeRequest, ComplaintIgnoreDuplicateRequest,
-    DuplicateSearchResponse
+    DuplicateSearchResponse, SemanticSearchResultItem, SemanticSearchResponse
 )
 from app.ai.ai_orchestrator import ai_orchestrator
 from app.services.audit_service import audit_service
 from app.services.notification_service import notification_service
 from app.services.complaint_service import complaint_service
+from app.services.semantic_search_service import semantic_search_service
 from app.services.lifecycle_service import lifecycle_service
 from app.models.complaint import ComplaintStatus
 
 router = APIRouter()
+
+@router.get("/semantic-search", response_model=SemanticSearchResponse)
+def semantic_search_complaints(
+    query: str = Query(..., description="Natural language search query to find conceptually similar complaints"),
+    limit: int = Query(10, ge=1, le=100),
+    threshold: float = Query(0.40, ge=0.0, le=1.0),
+    db: Session = Depends(get_db)
+):
+    """Semantic search using dense sentence embeddings and pgvector (or cosine similarity fallback)."""
+    results = semantic_search_service.search_complaints(
+        db=db,
+        query_text=query,
+        limit=limit,
+        threshold=threshold
+    )
+    return {
+        "query": query,
+        "total_results": len(results),
+        "results": results
+    }
 
 @router.get("/", response_model=List[ComplaintResponse])
 def get_complaints(
@@ -426,6 +447,29 @@ def get_similar_complaints(complaint_id: int, db: Session = Depends(get_db)):
     """Retrieves similar complaints and duplicate matches using Sentence Transformers + pgvector and TF-IDF baseline."""
     try:
         return complaint_service.get_similar_complaints(db=db, complaint_id=complaint_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/{complaint_id}/find-similar", response_model=SemanticSearchResponse)
+def find_similar_to_complaint(
+    complaint_id: int,
+    limit: int = Query(10, ge=1, le=100),
+    threshold: float = Query(0.40, ge=0.0, le=1.0),
+    db: Session = Depends(get_db)
+):
+    """'Find complaints similar to this one': retrieves conceptually similar complaints using dense embeddings."""
+    try:
+        results = semantic_search_service.find_similar_to_complaint(
+            db=db,
+            complaint_id=complaint_id,
+            limit=limit,
+            threshold=threshold
+        )
+        return {
+            "query": f"Complaint #{complaint_id}",
+            "total_results": len(results),
+            "results": results
+        }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

@@ -70,3 +70,17 @@ export const getSimilarComplaints = async (id) => {
   return response.data;
 };
 
+export const semanticSearchComplaints = async (query, limit = 10, threshold = 0.40) => {
+  const response = await apiClient.get('/complaints/semantic-search', {
+    params: { query, limit, threshold }
+  });
+  return response.data;
+};
+
+export const getComplaintsSimilarTo = async (id, limit = 10, threshold = 0.40) => {
+  const response = await apiClient.get(`/complaints/${id}/find-similar`, {
+    params: { limit, threshold }
+  });
+  return response.data;
+};
+

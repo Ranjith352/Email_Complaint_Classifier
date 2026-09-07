@@ -101,7 +101,21 @@ When assigning human agents:
   - **Merge Complaints**: Merges duplicate ticket into primary complaint (`POST /api/complaints/{id}/duplicate/merge`), transitioning status to `RESOLVED`/`MERGED` and transferring context.
   - **Ignore Duplicate Warning**: Dismisses the warning (`POST /api/complaints/{id}/duplicate/ignore`), clearing the duplicate flag.
 
-### 12. Dual Generative AI & pgvector RAG
+### 12. Dense Vector Semantic Search & "Find Complaints Similar to This One"
+- **Concept Subspace Semantic Embeddings**: Continuous 384-dimensional dense semantic vectors project natural language queries and complaint bodies into shared semantic conceptual spaces.
+- **Find Complaints Similar to This One**:
+  - Input Complaint: `"Money was deducted twice."`
+  - Retrieved Complaint: `"I was charged two times for the same transaction."`
+  - Conceptually identical even though vocabulary, token tokens, and grammar share zero overlap.
+- **pgvector & Cosine Fallback Execution**: Executes native pgvector `<=>` cosine distance queries when connected to PostgreSQL and seamless in-memory normalized dot products on SQLite.
+- **Dedicated REST API Endpoints**:
+  - `GET /api/complaints/semantic-search?query=...&threshold=0.40`: Natural language conceptual search across all complaints.
+  - `GET /api/complaints/{id}/find-similar`: Retrieves top conceptually matching complaints for a specific ticket, excluding the source ticket.
+- **Frontend Explorer & Triage Integration**:
+  - Semantic Search mode in the Complaints Explorer with instant example chips and similarity percentage badges.
+  - "Find complaints similar to this one" drawer in the ticket detail view with direct Link, Merge, and Inspect actions.
+
+### 13. Dual Generative AI & pgvector RAG
 - **Groq Cloud**: Ultra-fast inference with `llama-3.3-70b-versatile`.
 - **Local Ollama**: Offline fallback with `llama3`.
 - **pgvector Semantic Search**: 384-dimensional embeddings match incoming complaints against company SOPs, refund policies, and historical resolutions.
@@ -205,12 +219,13 @@ Open your browser at: **http://localhost:5173**
 
 ## 🧪 Running Automated Tests
 
-Run the complete backend test suite across all 93 unit and integration tests:
+Run the complete backend test suite across all 98 unit and integration tests:
 ```bash
 pytest backend/app/tests -v
 ```
 
-### Test Coverage (93 Tests Passing):
+### Test Coverage (98 Tests Passing):
+- **`test_semantic_search.py`**: Dense vector concept embeddings, lexical gap bridging ("Money was deducted twice." vs "I was charged two times for the same transaction." similarity $\ge 0.85$), `search_complaints` retrieval, `find_similar_to_complaint`, and REST endpoints (`/semantic-search`, `/{id}/find-similar`).
 - **`test_duplicate_detection.py`**: Sentence Transformers + pgvector flow, TF-IDF baseline, $\ge 0.85$ duplicate warning, and agent actions (Link, Merge, Ignore).
 - **`test_agent_assignment.py`**: 7-step criteria verification, lower-workload priority, and team queue fallback.
 - **`test_routing_rules.py`**: REST CRUD for configurable rules, user exact rule mappings, and dynamic runtime additions.
