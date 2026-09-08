@@ -16,7 +16,8 @@ from app.schemas.complaint import (
     EscalateRequest, SendResponseRequest, StatusTransitionRequest,
     ComplaintEventResponse, ComplaintEntityResponse, ComplaintReviewRequest,
     ComplaintLinkRequest, ComplaintMergeRequest, ComplaintIgnoreDuplicateRequest,
-    DuplicateSearchResponse, SemanticSearchResultItem, SemanticSearchResponse
+    DuplicateSearchResponse, SemanticSearchResultItem, SemanticSearchResponse,
+    GenerateCustomerResponseRequest, EditResponseRequest, ApproveResponseRequest
 )
 from app.ai.ai_orchestrator import ai_orchestrator
 from app.services.audit_service import audit_service
@@ -293,35 +294,188 @@ def submit_feedback(complaint_id: int, fb_in: FeedbackCreate, db: Session = Depe
     db.refresh(fb)
     return fb
 
+@router.post("/{complaint_id}/generate-response")
+async def generate_complaint_response(
+    complaint_id: int,
+    req: Optional[GenerateCustomerResponseRequest] = None,
+    db: Session = Depends(get_db)
+):
+    """Allows the agent to click 'Generate AI Response' to create a professional customer response."""
+    c = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    tone = req.tone if (req and req.tone) else "Empathetic & Professional"
+    dept_name = c.department.name if c.department else (c.category or "Customer Support")
+
+    from app.ai.response_generator import response_generator
+    draft = await response_generator.generate_draft(
+        ticket_number=c.complaint_number,
+        customer_name=c.customer_name or "Customer",
+        subject=c.subject,
+        body=c.description,
+        department=dept_name,
+        tone=tone
+    )
+
+    # Upsert DRAFT_REPLY for this complaint
+    resp = (
+        db.query(AIResponse)
+        .filter(AIResponse.complaint_id == complaint_id, AIResponse.response_type == "DRAFT_REPLY")
+        .first()
+    )
+
+    if resp:
+        resp.content = draft["body"]
+        resp.provider = draft["provider"]
+        resp.is_approved = False  # Reset approval upon fresh generation
+        resp.approved_by = None
+        resp.approved_at = None
+        resp.is_sent = False
+        resp.sent_by = None
+        resp.sent_at = None
+    else:
+        resp = AIResponse(
+            complaint_id=c.id,
+            provider=draft["provider"],
+            model="Configured-LLM",
+            response_type="DRAFT_REPLY",
+            content=draft["body"],
+            is_approved=False,
+            is_sent=False
+        )
+        db.add(resp)
+
+    lifecycle_service.record_event(
+        db=db,
+        complaint_id=complaint_id,
+        event_type="AI_RESPONSE_GENERATED",
+        actor="AI Assistant",
+        description="AI customer response draft generated",
+        event_metadata={"provider": draft["provider"]}
+    )
+
+    db.commit()
+    db.refresh(resp)
+    return {"message": "AI customer response draft generated successfully", "response": resp}
+
+@router.put("/{complaint_id}/edit-response")
+def edit_complaint_response(
+    complaint_id: int,
+    req: EditResponseRequest,
+    db: Session = Depends(get_db)
+):
+    """Allows the agent to edit the customer response draft before approving or sending.
+    Note: Editing automatically resets approval so modified text requires human approval.
+    """
+    c = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    query = db.query(AIResponse).filter(AIResponse.complaint_id == complaint_id, AIResponse.response_type == "DRAFT_REPLY")
+    if req.response_id:
+        query = query.filter(AIResponse.id == req.response_id)
+    resp = query.first()
+
+    if not resp:
+        resp = AIResponse(
+            complaint_id=complaint_id,
+            provider="Human Agent Editor",
+            model="Agent-Edited",
+            response_type="DRAFT_REPLY",
+            content=req.content,
+            is_approved=False,
+            is_sent=False
+        )
+        db.add(resp)
+    else:
+        resp.content = req.content
+        resp.is_approved = False  # Editing resets approval
+        resp.approved_by = None
+        resp.approved_at = None
+
+    lifecycle_service.record_event(
+        db=db,
+        complaint_id=complaint_id,
+        event_type="RESPONSE_EDITED",
+        actor="Support Agent",
+        description="Customer response draft edited by agent",
+        event_metadata={"response_id": resp.id}
+    )
+
+    db.commit()
+    db.refresh(resp)
+    return {"message": "Customer response draft updated successfully", "response": resp}
+
 @router.post("/{complaint_id}/approve-response")
-def approve_response(complaint_id: int, response_id: int, approved_by: str = "Lead Agent", db: Session = Depends(get_db)):
+def approve_response(
+    complaint_id: int,
+    response_id: Optional[int] = None,
+    approved_by: str = "Lead Agent",
+    req: Optional[ApproveResponseRequest] = None,
+    db: Session = Depends(get_db)
+):
     """Records 'Customer response approved' milestone in complaint_events."""
-    resp = db.query(AIResponse).filter(AIResponse.id == response_id, AIResponse.complaint_id == complaint_id).first()
+    target_resp_id = req.response_id if (req and req.response_id) else response_id
+    approver = req.approved_by if (req and req.approved_by) else approved_by
+
+    query = db.query(AIResponse).filter(AIResponse.complaint_id == complaint_id)
+    if target_resp_id:
+        query = query.filter(AIResponse.id == target_resp_id)
+    else:
+        query = query.filter(AIResponse.response_type == "DRAFT_REPLY").order_by(AIResponse.created_at.desc())
+    resp = query.first()
+
     if not resp:
         raise HTTPException(status_code=404, detail="AI response draft not found")
 
     resp.is_approved = True
-    resp.approved_by = approved_by
+    resp.approved_by = approver
     resp.approved_at = datetime.utcnow()
 
     lifecycle_service.record_event(
         db=db,
         complaint_id=complaint_id,
         event_type="RESPONSE_APPROVED",
-        actor=approved_by,
-        description="Customer response approved",
-        event_metadata={"response_id": response_id}
+        actor=approver,
+        description=f"Customer response approved by {approver}",
+        event_metadata={"response_id": resp.id}
     )
 
     db.commit()
+    db.refresh(resp)
     return {"message": "Customer response approved", "response": resp}
 
 @router.post("/{complaint_id}/send-response")
 def send_response(complaint_id: int, req: SendResponseRequest, db: Session = Depends(get_db)):
-    """Dispatches response to customer and records 'Customer response sent' in complaint_events."""
+    """Dispatches response to customer and records 'Customer response sent' in complaint_events.
+    CRITICAL: Never send automatically without explicit human approval.
+    """
     c = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not c:
         raise HTTPException(status_code=404, detail="Complaint not found")
+
+    # Locate the target response draft
+    query = db.query(AIResponse).filter(AIResponse.complaint_id == complaint_id)
+    if req.response_id:
+        query = query.filter(AIResponse.id == req.response_id)
+    else:
+        query = query.filter(AIResponse.response_type == "DRAFT_REPLY").order_by(AIResponse.created_at.desc())
+    resp = query.first()
+
+    if not resp:
+        raise HTTPException(status_code=404, detail="No customer response draft found to send.")
+
+    # STRICT GUARD: Never send automatically without explicit human approval
+    if not resp.is_approved:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot send response without explicit human approval. Please approve the response before sending."
+        )
+
+    resp.is_sent = True
+    resp.sent_by = req.sender or "Support Agent"
+    resp.sent_at = datetime.utcnow()
 
     lifecycle_service.record_event(
         db=db,
@@ -329,11 +483,12 @@ def send_response(complaint_id: int, req: SendResponseRequest, db: Session = Dep
         event_type="RESPONSE_SENT",
         actor=req.sender or "Support Agent",
         description="Customer response sent",
-        event_metadata={"response_id": req.response_id, "customer_email": c.customer_email}
+        event_metadata={"response_id": resp.id, "customer_email": c.customer_email}
     )
 
     db.commit()
-    return {"message": "Customer response successfully sent", "complaint": c}
+    db.refresh(resp)
+    return {"message": "Customer response successfully sent", "complaint": c, "response": resp}
 
 @router.post("/{complaint_id}/close")
 def close_complaint(complaint_id: int, actor: str = "Support Lead", notes: Optional[str] = None, db: Session = Depends(get_db)):

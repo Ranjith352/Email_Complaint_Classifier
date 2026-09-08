@@ -97,4 +97,34 @@ export const getComplaintSummary = async (id) => {
   return response.data;
 };
 
+export const generateCustomerResponse = async (id, tone = "Empathetic & Professional") => {
+  const response = await apiClient.post(`/complaints/${id}/generate-response`, { tone });
+  return response.data;
+};
+
+export const editCustomerResponse = async (id, responseId, content) => {
+  const response = await apiClient.put(`/complaints/${id}/edit-response`, {
+    response_id: responseId,
+    content
+  });
+  return response.data;
+};
+
+export const approveCustomerResponse = async (id, responseId, approvedBy = "Support Agent") => {
+  const response = await apiClient.post(`/complaints/${id}/approve-response`, {
+    response_id: responseId,
+    approved_by: approvedBy
+  });
+  return response.data;
+};
+
+export const sendCustomerResponse = async (id, responseId, sender = "Support Agent") => {
+  const response = await apiClient.post(`/complaints/${id}/send-response`, {
+    response_id: responseId,
+    sender
+  });
+  return response.data;
+};
+
+
 

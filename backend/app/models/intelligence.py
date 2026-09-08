@@ -61,6 +61,11 @@ class AIResponse(Base):
     approved_by = Column(String(255), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     feedback_score = Column(Integer, nullable=True)  # 1 to 5
+
+    # Human Dispatch / Sending (Explicit Human Approval Required)
+    is_sent = Column(Boolean, default=False)
+    sent_by = Column(String(255), nullable=True)
+    sent_at = Column(DateTime, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

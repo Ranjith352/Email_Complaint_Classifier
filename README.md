@@ -5,7 +5,7 @@
 [![React 18](https://img.shields.io/badge/React-18.2-61DAFB.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg)](https://tailwindcss.com/)
 [![PostgreSQL & pgvector](https://img.shields.io/badge/Database-PostgreSQL_%2B_pgvector-336791.svg)](https://github.com/pgvector/pgvector)
-[![Pytest Suite](https://img.shields.io/badge/Testing-131%20Passed-brightgreen.svg)](https://pytest.org/)
+[![Pytest Suite](https://img.shields.io/badge/Testing-135%20Passed-brightgreen.svg)](https://pytest.org/)
 
 An enterprise-grade, end-to-end AI platform that automates customer complaint ingestion from Gmail, performs multi-level taxonomy classification, executes Hugging Face sentiment and configurable emotion analysis, extracts 10 core entity types with Named Entity Recognition (NER), runs hybrid urgency detection, calculates deterministic multi-factor priority scores, applies confidence-tiered routing with human-in-the-loop review, manages database-configured routing rules, verifies 7-step agent capacity assignments with team queue fallbacks, integrates a pluggable `LLMProvider` abstraction (`OllamaProvider` and `GroqProvider` via `LLM_PROVIDER`), generates high-fidelity AI summaries for 800+ word complaints, and drafts empathetic RAG-backed resolutions.
 
@@ -315,6 +315,28 @@ To prevent AI hallucination and protect corporate liability, strict grounding co
 - **Substantive Topic Verification**: Stopword-filtered keyword matching ensures that spurious cosine similarities (e.g. from generic conversational syntax) cannot trigger policy citations for ungrounded or out-of-domain queries (e.g., speculative starship parking regulations or malicious policy invention requests).
 - **Zero Unsupported Exposure**: Unsupported information is never presented as official company policy; out-of-domain and invention attempts are rejected with `grounded=False` and `cited_chunks=[]`.
 
+### 18. Human-in-the-Loop Customer Response Studio (Generate, Edit, Approve, Send)
+Enterprise customer communications are governed by a human-in-the-loop workflow:
+- **Professional Standard Structure**:
+  ```text
+  Dear Customer,
+
+  We have reviewed your complaint regarding the duplicate payment. Our Finance team is currently verifying the transaction and will process the necessary refund if the duplicate transaction is confirmed.
+
+  Complaint ID: CMP-10001
+
+  Regards,
+  Customer Support Team
+  ```
+- **The 4 Agent Operations**:
+  1. **Generate (`POST /api/complaints/{id}/generate-response`)**: Allows the agent to click **"Generate AI Response"** to draft a tailored, empathetic response using Ollama/Groq or fallback template. Initialized with `is_approved=False` and `is_sent=False`.
+  2. **Edit (`PUT /api/complaints/{id}/edit-response`)**: Provides an in-place editing studio with word/character counts. Modifying draft content automatically resets `is_approved=False` so changes cannot bypass human review.
+  3. **Approve (`POST /api/complaints/{id}/approve-response`)**: Explicit human sign-off recording approver identity (`approved_by`) and timestamp (`approved_at`).
+  4. **Send (`POST /api/complaints/{id}/send-response`)**: Dispatches response to the customer and records the `RESPONSE_SENT` lifecycle milestone.
+- **Strict Anti-Automation Guardrail**:
+  - **Never send automatically**: The backend strictly enforces human approval, rejecting any send attempt on unapproved drafts with `HTTP 400 Bad Request`.
+  - The UI disables dispatch until an agent explicitly approves the response.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -327,7 +349,7 @@ To prevent AI hallucination and protect corporate liability, strict grounding co
 | **NLP & AI** | Hugging Face Transformers, Sentence Transformers, spaCy, Scikit-learn |
 | **Generative AI** | Pluggable `LLMProvider` (Default local Ollama at `http://localhost:11434`, Optional Groq Cloud API with Ollama fallback), RAG Pipeline |
 | **Email Ingestion** | Gmail API, Google OAuth 2.0 |
-| **Testing** | Pytest, FastAPI TestClient, Asyncio (131 passing automated tests) |
+| **Testing** | Pytest, FastAPI TestClient, Asyncio (135 passing automated tests) |
 
 
 ---

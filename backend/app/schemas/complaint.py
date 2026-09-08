@@ -45,6 +45,18 @@ class EscalateRequest(BaseModel):
     reason: str
     actor: Optional[str] = "Support Agent"
 
+class GenerateCustomerResponseRequest(BaseModel):
+    tone: Optional[str] = "Empathetic & Professional"
+    instructions: Optional[str] = None
+
+class EditResponseRequest(BaseModel):
+    response_id: Optional[int] = None
+    content: str
+
+class ApproveResponseRequest(BaseModel):
+    response_id: Optional[int] = None
+    approved_by: Optional[str] = "Support Agent"
+
 class SendResponseRequest(BaseModel):
     response_id: Optional[int] = None
     message: Optional[str] = None
