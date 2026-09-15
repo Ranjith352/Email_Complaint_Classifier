@@ -11,10 +11,14 @@ import {
 import StatCard from '../components/StatCard';
 import UrgencyBadge from '../components/UrgencyBadge';
 import PriorityBadge from '../components/PriorityBadge';
+import StatusBadge from '../components/StatusBadge';
 import AIInsightsSection from '../components/AIInsightsSection';
 import ComplaintDetailModal from '../components/ComplaintDetailModal';
+import { CardSkeleton, TableSkeleton } from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
 import { getDepartmentDashboard, getDepartments } from '../api/departments';
 import { getComplaints } from '../api/complaints';
+import { getCurrentUser } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
 const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
@@ -22,7 +26,8 @@ const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', 
 export default function DepartmentDashboardPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user || getCurrentUser() || {};
 
   const [departments, setDepartments] = useState([]);
   const [selectedDeptId, setSelectedDeptId] = useState(null);
@@ -38,12 +43,13 @@ export default function DepartmentDashboardPage() {
   // 1. Initial Load of Departments list
   useEffect(() => {
     loadDepartmentsList();
-  }, [user]);
+  }, [id, user?.id]);
 
   const loadDepartmentsList = async () => {
     try {
       const depts = await getDepartments();
-      setDepartments(depts || []);
+      const validDepts = Array.isArray(depts) ? depts : depts?.departments || [];
+      setDepartments(validDepts);
 
       // Determine default department ID
       let targetId = id ? parseInt(id, 10) : null;
@@ -51,19 +57,21 @@ export default function DepartmentDashboardPage() {
       if (!targetId) {
         if (isManager && user?.department_id) {
           targetId = user.department_id;
-        } else if (depts && depts.length > 0) {
-          // Default to first department or Finance if available
-          const finance = depts.find((d) => (d.name || '').toLowerCase().includes('finance'));
-          targetId = finance ? finance.id : depts[0].id;
+        } else if (validDepts && validDepts.length > 0) {
+          const finance = validDepts.find((d) => (d.name || '').toLowerCase().includes('finance'));
+          targetId = finance ? finance.id : validDepts[0].id;
         }
       }
 
       if (targetId) {
         setSelectedDeptId(targetId);
         fetchDepartmentData(targetId);
+      } else {
+        setLoading(false);
       }
     } catch (err) {
       console.error('Failed to load departments list:', err);
+      setLoading(false);
     }
   };
 
@@ -74,19 +82,20 @@ export default function DepartmentDashboardPage() {
     try {
       const [dashRes, compRes] = await Promise.all([
         getDepartmentDashboard(deptId),
-        getComplaints({ department_id: deptId, limit: 15 })
+        getComplaints({ department_id: deptId, limit: 15 }).catch(() => [])
       ]);
       setDashboardData(dashRes);
-      setDeptComplaints(compRes || []);
+      setDeptComplaints(Array.isArray(compRes) ? compRes : compRes?.items || []);
     } catch (err) {
       console.error('Department dashboard load error:', err);
       if (err.response?.status === 403) {
         setPermissionError(
+          err.response?.data?.message ||
           err.response?.data?.detail ||
           'Managers can only access their assigned department dashboard unless granted ADMIN permissions.'
         );
       } else {
-        setPermissionError('Unable to load department dashboard data.');
+        setPermissionError('Unable to load department dashboard data. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -136,7 +145,7 @@ export default function DepartmentDashboardPage() {
 
         {/* Action Controls & Department Switcher */}
         <div className="flex items-center gap-3">
-          {isAdmin ? (
+          {isAdmin || !isManager ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400 font-semibold">Switch Department:</span>
               <select
@@ -160,6 +169,7 @@ export default function DepartmentDashboardPage() {
 
           <button
             onClick={() => selectedDeptId && fetchDepartmentData(selectedDeptId)}
+            disabled={loading}
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
             title="Refresh Department Telemetry"
           >
@@ -168,8 +178,20 @@ export default function DepartmentDashboardPage() {
         </div>
       </div>
 
+      {/* Loading Skeleton View */}
+      {loading && (
+        <div className="space-y-6">
+          <CardSkeleton count={5} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CardSkeleton count={2} />
+            <CardSkeleton count={2} />
+          </div>
+          <TableSkeleton rows={5} cols={7} />
+        </div>
+      )}
+
       {/* RBAC 403 Permission Banner if Manager is restricted */}
-      {permissionError && (
+      {!loading && permissionError && (
         <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/40 text-rose-300 space-y-3">
           <div className="flex items-center gap-2 font-bold text-sm text-rose-200">
             <ShieldAlert className="w-5 h-5 text-rose-400" />
@@ -189,7 +211,8 @@ export default function DepartmentDashboardPage() {
         </div>
       )}
 
-      {!permissionError && (
+      {/* Loaded Dashboard Content */}
+      {!loading && !permissionError && (
         <>
           {/* Department-Specific AI Insights */}
           {insights.length > 0 && (
@@ -199,13 +222,7 @@ export default function DepartmentDashboardPage() {
             />
           )}
 
-          {/* 5 Core Department Metrics as requested:
-              - Open Complaints
-              - Critical Complaints
-              - SLA Risks
-              - Resolved Complaints
-              - Average Resolution Time
-          */}
+          {/* 5 Core Department Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* 1. Open Complaints */}
             <StatCard
@@ -257,7 +274,7 @@ export default function DepartmentDashboardPage() {
 
           {/* Top Complaint Categories & Agent Workload Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Complaint Categories (e.g., Billing, Payments, Refunds, Invoices) */}
+            {/* Top Complaint Categories */}
             <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -277,14 +294,14 @@ export default function DepartmentDashboardPage() {
               {topCategories.length > 0 ? (
                 <div className="space-y-4 pt-2">
                   {topCategories.map((cat, idx) => (
-                    <div key={cat.category} className="space-y-1.5">
+                    <div key={cat.category || idx} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2 font-semibold text-white">
                           <span
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }}
                           />
-                          <span>{cat.category}</span>
+                          <span>{cat.category || 'General'}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-slate-400">{cat.count} tickets</span>
@@ -332,7 +349,9 @@ export default function DepartmentDashboardPage() {
               {agentWorkload.length > 0 ? (
                 <div className="space-y-3 pt-2 max-h-80 overflow-y-auto pr-1">
                   {agentWorkload.map((agent) => {
-                    const util = agent.utilization_rate || Math.round((agent.current_workload / (agent.max_workload || 10)) * 100);
+                    const currentLoad = agent.current_workload ?? 0;
+                    const maxLoad = agent.max_workload || 10;
+                    const util = agent.utilization_rate || Math.round((currentLoad / Math.max(1, maxLoad)) * 100);
                     const isOverloaded = util >= 90;
                     return (
                       <div
@@ -342,10 +361,10 @@ export default function DepartmentDashboardPage() {
                         <div className="flex items-center justify-between text-xs mb-2">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-300 font-bold flex items-center justify-center text-[11px] border border-emerald-500/20">
-                              {agent.agent_name?.slice(0, 2)?.toUpperCase()}
+                              {(agent.agent_name || 'AG').slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-bold text-white">{agent.agent_name}</p>
+                              <p className="font-bold text-white">{agent.agent_name || 'Agent'}</p>
                               <p className="text-[10px] text-slate-400">
                                 Rating: {agent.performance_score || '4.8'}/5.0
                               </p>
@@ -357,7 +376,7 @@ export default function DepartmentDashboardPage() {
                                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                                 : 'bg-slate-800 text-slate-300'
                             }`}>
-                              {agent.current_workload} / {agent.max_workload} Active
+                              {currentLoad} / {maxLoad} Active
                             </span>
                             <p className="text-[10px] font-mono text-slate-400 mt-0.5">{util}% Utilized</p>
                           </div>
@@ -421,23 +440,21 @@ export default function DepartmentDashboardPage() {
                 <tbody className="divide-y divide-slate-800/60">
                   {deptComplaints.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-900/50 transition-colors">
-                      <td className="py-3 font-mono font-bold text-slate-300">{c.ticket_number}</td>
+                      <td className="py-3 font-mono font-bold text-slate-300">{c.ticket_number || c.complaint_number || `CMP-${c.id}`}</td>
                       <td className="py-3 max-w-sm">
-                        <p className="font-medium text-white truncate">{c.subject || c.title}</p>
-                        <p className="text-[11px] text-slate-400 truncate">{c.customer_name || c.customer_email || c.sender_email}</p>
+                        <p className="font-medium text-white truncate">{c.subject || c.title || 'Support Ticket'}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{c.customer_name || c.customer_email || c.sender_email || 'Customer'}</p>
                       </td>
                       <td className="py-3 font-medium text-slate-300">{c.category || 'General'}</td>
                       <td className="py-3"><PriorityBadge priority={c.priority || 'P3'} /></td>
                       <td className="py-3"><UrgencyBadge urgency={c.urgency || 'Medium'} /></td>
                       <td className="py-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
-                          {c.status || 'OPEN'}
-                        </span>
+                        <StatusBadge status={c.status || 'OPEN'} />
                       </td>
                       <td className="py-3 text-right">
                         <button
                           onClick={() => setSelectedComplaint(c)}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-brand-300 text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-brand-300 text-xs font-semibold transition-colors cursor-pointer"
                         >
                           <span>Triage</span>
                           <ArrowUpRight className="w-3 h-3" />
