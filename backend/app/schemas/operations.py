@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from pydantic import BaseModel
 
 class NotificationResponse(BaseModel):
@@ -16,11 +16,16 @@ class NotificationResponse(BaseModel):
 
 class AuditLogResponse(BaseModel):
     id: int
+    user: Optional[str] = None
     user_id: Optional[int] = None
     action: str
-    entity_type: str
+    entity_type: Optional[str] = None
     entity_id: Optional[str] = None
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
     ip_address: Optional[str] = None
+    timestamp: Optional[datetime] = None
     created_at: datetime
 
     class Config:

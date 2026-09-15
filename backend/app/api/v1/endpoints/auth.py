@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -52,8 +53,23 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def get_current_user_profile(user: User = Depends(get_current_user)):
     return user
 
-# Example RBAC Protected Routes
-@router.get("/admin/users", dependencies=[Depends(require_roles("ADMIN", "MANAGER"))])
+# RBAC: ADMIN User Management
+@router.get("/admin/users", dependencies=[Depends(require_roles("ADMIN"))], response_model=List[UserResponse])
+@router.get("/users", dependencies=[Depends(require_roles("ADMIN"))], response_model=List[UserResponse])
 def list_all_users_admin(db: Session = Depends(get_db)):
-    """Only accessible to ADMIN and MANAGER roles."""
-    return db.query(User).all()
+    """Only accessible to ADMIN role."""
+    return db.query(User).order_by(User.id.asc()).all()
+
+@router.put("/users/{user_id}/role", dependencies=[Depends(require_roles("ADMIN"))], response_model=UserResponse)
+def update_user_role_admin(user_id: int, new_role: str, db: Session = Depends(get_db)):
+    """Allows ADMIN to reassign roles (CUSTOMER, AGENT, MANAGER, ADMIN)."""
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    norm_role = new_role.upper()
+    if norm_role not in [r.value for r in UserRole]:
+        raise HTTPException(status_code=400, detail=f"Invalid role '{new_role}'")
+    target_user.role = norm_role
+    db.commit()
+    db.refresh(target_user)
+    return target_user

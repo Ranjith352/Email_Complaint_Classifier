@@ -1,6 +1,9 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey
-from backend.app.core.database import Base
+try:
+    from app.core.database import Base
+except ImportError:
+    from backend.app.core.database import Base
 
 class KnowledgeItem(Base):
     """Knowledge base article or historical complaint embedding for RAG retrieval."""

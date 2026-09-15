@@ -122,7 +122,8 @@ class SentenceTransformerPgVectorDuplicateDetector:
             return []
 
         # Try pgvector query if connected to PostgreSQL
-        if IS_POSTGRES:
+        from app.core.database import HAS_PGVECTOR
+        if IS_POSTGRES and HAS_PGVECTOR:
             try:
                 emb_str = "[" + ",".join(str(float(x)) for x in embedding) + "]"
                 sql = text("""
@@ -156,6 +157,10 @@ class SentenceTransformerPgVectorDuplicateDetector:
                 return results
             except Exception as pg_err:
                 logger.info(f"pgvector query fallback to vector math: {pg_err}")
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
 
         # Local SQLite / Fallback vector cosine calculation
         query = db.query(Complaint).filter(Complaint.embedding.isnot(None))

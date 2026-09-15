@@ -14,25 +14,18 @@ class Config:
     FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
     PORT = int(os.getenv("PORT", 5000))
 
-    # Storage Provider: 'sqlite' or 'firestore'
-    STORAGE_PROVIDER = os.getenv("STORAGE_PROVIDER", "sqlite").lower()
-    SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", "complaints.db")
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / SQLITE_DB_PATH}"
+    # Storage Provider: PostgreSQL complaint_db primary with SQLite fallback
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:ranjupriya@localhost:5432/complaint_db")
+    SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", "autotriage.db")
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Optional Firebase configuration
-    FIREBASE_KEY_PATH = os.getenv("FIREBASE_KEY_PATH", "")
-    FIREBASE_CONFIGURED = bool(
-        FIREBASE_KEY_PATH and (BASE_DIR / FIREBASE_KEY_PATH).exists()
-    )
-
-    # Optional Gmail configuration
-    GMAIL_CREDENTIALS_PATH = os.getenv("GMAIL_CREDENTIALS_PATH", "")
-    GMAIL_TOKEN_PATH = os.getenv("GMAIL_TOKEN_PATH", "token.json")
+    # Optional Gmail configuration via .env
+    GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID", "")
+    GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET", "")
+    GMAIL_REDIRECT_URI = os.getenv("GMAIL_REDIRECT_URI", "http://localhost:8000/api/emails/callback")
     GMAIL_COMPLAINTS_LABEL = os.getenv("GMAIL_COMPLAINTS_LABEL", "Complaints")
-    GMAIL_CONFIGURED = bool(
-        GMAIL_CREDENTIALS_PATH and (BASE_DIR / GMAIL_CREDENTIALS_PATH).exists()
-    )
+    GMAIL_CONFIGURED = bool(GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET)
 
     # Optional AI LLM APIs
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -44,10 +37,10 @@ class Config:
 
     # SLA targets in hours
     SLA_HOURS = {
-        "Critical": int(os.getenv("SLA_CRITICAL_HOURS", 4)),
-        "High": int(os.getenv("SLA_HIGH_HOURS", 8)),
-        "Medium": int(os.getenv("SLA_MEDIUM_HOURS", 24)),
-        "Low": int(os.getenv("SLA_LOW_HOURS", 48)),
+        "Critical": int(os.getenv("SLA_HOURS_CRITICAL", 2)),
+        "High": int(os.getenv("SLA_HOURS_HIGH", 8)),
+        "Medium": int(os.getenv("SLA_HOURS_MEDIUM", 24)),
+        "Low": int(os.getenv("SLA_HOURS_LOW", 72)),
     }
 
     # Department & Sub-department taxonomy

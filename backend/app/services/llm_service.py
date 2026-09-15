@@ -2,7 +2,10 @@ import json
 import logging
 import httpx
 from typing import Dict, Any, List, Optional
-from backend.app.core.config import settings
+try:
+    from app.core.config import settings
+except ImportError:
+    from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -129,14 +132,28 @@ class LLMService:
         )
         user_prompt = f"Complaint:\n{text}\n\nCategory: {category}\n\nSimilar Solved Cases:\n{rag_context}"
         
+        header = "AI GENERATED RECOMMENDATION"
+        disclaimer = "The agent remains responsible for the final decision."
+
+        def format_block(step_list):
+            numbered = "\n".join([f"{i+1}. {s.strip()}" for i, s in enumerate(step_list)])
+            return f"{header}\n\n{numbered}\n\n{disclaimer}"
+
         groq_res = await self._call_groq(system_prompt, user_prompt, json_mode=True)
         if groq_res:
             try:
                 data = json.loads(groq_res)
-                return {
-                    "recommended_steps": data.get("recommended_steps", []),
-                    "provider": f"Groq ({self.groq_model})"
-                }
+                steps_res = data.get("recommended_steps", [])
+                if steps_res:
+                    import re
+                    clean = [re.sub(r"^\d+[\.\)]\s*", "", s).strip() for s in steps_res if s.strip()]
+                    return {
+                        "header": header,
+                        "disclaimer": disclaimer,
+                        "recommended_steps": clean,
+                        "formatted_recommendation": format_block(clean),
+                        "provider": f"Groq ({self.groq_model})"
+                    }
             except Exception:
                 pass
 
@@ -144,46 +161,77 @@ class LLMService:
         if ollama_res:
             try:
                 data = json.loads(ollama_res)
-                return {
-                    "recommended_steps": data.get("recommended_steps", []),
-                    "provider": f"Ollama ({self.ollama_model})"
-                }
+                steps_res = data.get("recommended_steps", [])
+                if steps_res:
+                    import re
+                    clean = [re.sub(r"^\d+[\.\)]\s*", "", s).strip() for s in steps_res if s.strip()]
+                    return {
+                        "header": header,
+                        "disclaimer": disclaimer,
+                        "recommended_steps": clean,
+                        "formatted_recommendation": format_block(clean),
+                        "provider": f"Ollama ({self.ollama_model})"
+                    }
             except Exception:
                 pass
 
         # Deterministic RAG Fallback
-        steps = []
-        if similar_cases:
-            top_case = similar_cases[0]
-            steps.append(f"Apply proven resolution from matching case #{top_case.get('id')}: {top_case.get('solution_steps')}")
-        
-        if "Billing" in category:
-            steps.extend([
-                "Locate the transaction ID in the payment gateway ledger and inspect invoice audit status.",
-                "Verify whether duplicate capture occurred; initiate immediate reversal if double billed.",
-                "Issue a formal credit note and confirm email receipt with the customer."
-            ])
-        elif "Technical" in category:
-            steps.extend([
-                "Cross-check application error logs and telemetry for corresponding user account session.",
-                "Verify if system cache or permission lock is blocking the customer's workflow.",
-                "Deploy fix or guide user through cleared cache / password re-authentication."
-            ])
-        elif "Security" in category:
-            steps.extend([
-                "Immediately terminate all active sessions and trigger security password reset.",
-                "Audit IP access logs and check 2FA device binding for anomalies.",
-                "Notify security operations lead and secure customer account identity."
-            ])
+        text_lower = text.lower()
+        if any(kw in text_lower for kw in ["duplicate", "double charge", "charged twice", "deducted twice", "two times", "double billing"]):
+            steps = [
+                "Verify transaction ID.",
+                "Check payment gateway status.",
+                "Confirm whether both transactions settled.",
+                "If duplicate settlement is confirmed, initiate refund.",
+                "Notify the customer."
+            ]
+        elif "refund" in text_lower or "Billing" in category or "Payment" in category:
+            steps = [
+                "Verify customer billing account and invoice identifier.",
+                "Check payment gateway transaction records and settlement ledger.",
+                "Confirm eligibility according to company refund guidelines.",
+                "If refund is authorized, execute payment reversal through gateway.",
+                "Notify the customer with transaction reference."
+            ]
+        elif "Technical" in category or any(kw in text_lower for kw in ["500", "error", "crash", "timeout", "bug", "portal", "outage"]):
+            steps = [
+                "Verify system error logs and trace IDs for customer session.",
+                "Check affected service health and database connection pool status.",
+                "Confirm whether active user sessions or checkout transactions failed.",
+                "If service degradation is confirmed, deploy hotfix or clear cache/restart service.",
+                "Notify the customer once service stability is verified."
+            ]
+        elif "Security" in category or any(kw in text_lower for kw in ["unauthorized", "suspicious", "hack", "compromise", "freeze", "stolen"]):
+            steps = [
+                "Verify reported login IP, device fingerprint, and session tokens.",
+                "Check account security audit logs and unauthorized access attempts.",
+                "Confirm whether account credentials or settings were altered.",
+                "If unauthorized compromise is confirmed, terminate active sessions and reset credentials.",
+                "Notify the customer via verified secondary channel."
+            ]
+        elif any(kw in text_lower for kw in ["delivery", "courier", "shipping", "parcel", "package", "tracking", "damaged"]):
+            steps = [
+                "Verify order number and courier tracking shipment ID.",
+                "Check courier dispatch logs and package transit status.",
+                "Confirm whether delivery is delayed, misplaced, or damaged.",
+                "If delivery failure or delay is confirmed, expedite courier reshipment or process replacement.",
+                "Notify the customer."
+            ]
         else:
-            steps.extend([
-                "Acknowledge customer communication and verify ticket details in CRM.",
-                "Dispatch replacement or escalate to responsible regional logistics coordinator.",
-                "Follow up within designated SLA window to confirm full customer satisfaction."
-            ])
+            steps = [
+                "Verify customer account identity and ticket details.",
+                "Check departmental service records and prior interactions.",
+                "Confirm root cause and operational impact of the reported issue.",
+                "If issue validity is confirmed, initiate standard corrective action.",
+                "Notify the customer."
+            ]
 
+        formatted = format_block(steps)
         return {
+            "header": header,
+            "disclaimer": disclaimer,
             "recommended_steps": steps,
+            "formatted_recommendation": formatted,
             "provider": "Knowledge-Base Grounded Fallback"
         }
 

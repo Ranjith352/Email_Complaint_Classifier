@@ -15,4 +15,14 @@ class ComplaintSummarizer:
         llm = get_llm_provider(provider_preference, model=model_preference)
         return await llm.summarize(text=body, subject=subject)
 
+    @staticmethod
+    async def summarize_text(text: str) -> str:
+        """Helper to summarize arbitrary complaint text."""
+        llm = get_llm_provider()
+        res = await llm.summarize(text=text, subject="Complaint Summary")
+        if isinstance(res, dict):
+            return res.get("summary") or res.get("text") or str(res)
+        return str(res)
+
 summarizer = ComplaintSummarizer()
+

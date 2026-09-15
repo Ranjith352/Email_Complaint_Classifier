@@ -2,8 +2,13 @@ import math
 import logging
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from backend.app.models.vector_embedding import KnowledgeItem
-from backend.app.services.nlp_engine import nlp_engine
+try:
+    from app.models.vector_embedding import KnowledgeItem
+    from app.services.nlp_engine import nlp_engine
+except ImportError:
+    from backend.app.models.vector_embedding import KnowledgeItem
+    from backend.app.services.nlp_engine import nlp_engine
+
 
 logger = logging.getLogger(__name__)
 

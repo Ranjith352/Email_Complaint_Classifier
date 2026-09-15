@@ -7,19 +7,25 @@ import {
 } from 'lucide-react';
 import UrgencyBadge from '../components/UrgencyBadge';
 import DepartmentBadge from '../components/DepartmentBadge';
+import SLATrackerCard from '../components/SLATrackerCard';
 import {
   getComplaint, resolveComplaint, reassignComplaint,
   linkComplaint, mergeComplaint, ignoreDuplicateWarning, getSimilarComplaints,
   getComplaintsSimilarTo, generateCustomerResponse, editCustomerResponse,
-  approveCustomerResponse, sendCustomerResponse
+  approveCustomerResponse, sendCustomerResponse, refreshComplaintRecommendations
 } from '../api/complaints';
 import apiClient from '../api/client';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function ComplaintDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [escalating, setEscalating] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [resolving, setResolving] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(5);
@@ -40,6 +46,7 @@ export default function ComplaintDetailPage() {
   const [approvingResponse, setApprovingResponse] = useState(false);
   const [sendingResponse, setSendingResponse] = useState(false);
   const [responseActionFeedback, setResponseActionFeedback] = useState('');
+  const [refreshingRecommendation, setRefreshingRecommendation] = useState(false);
 
   useEffect(() => {
     loadDetails();
@@ -71,6 +78,21 @@ export default function ComplaintDetailPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshRecommendation = async () => {
+    setRefreshingRecommendation(true);
+    try {
+      await refreshComplaintRecommendations(id);
+      await loadDetails();
+      setResponseActionFeedback('Fresh AI Recommended Resolution calculated.');
+      setTimeout(() => setResponseActionFeedback(''), 4000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to refresh recommendations: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setRefreshingRecommendation(false);
     }
   };
 
@@ -126,22 +148,29 @@ export default function ComplaintDetailPage() {
   const handleSendResponse = async (respId, targetEmail) => {
     const draft = data?.ai_responses?.find(r => r.response_type === 'DRAFT_REPLY');
     if (!draft?.is_approved) {
-      alert('Cannot send response without explicit human approval. Please approve the response first.');
+      toast.warning('Cannot send response without explicit human approval. Please approve the response first.');
       return;
     }
     const recipient = targetEmail || data?.complaint?.customer_email || 'the customer';
-    if (!window.confirm(`Are you sure you want to send this approved response to ${recipient}?\n\nThis will record the milestone and update ticket history.`)) {
+    const confirmed = await confirm({
+      title: 'Send Response to Customer',
+      message: `Are you sure you want to send this approved response to ${recipient}? This will record the milestone and update ticket history.`,
+      confirmText: 'Dispatch Email',
+      variant: 'info',
+    });
+    if (!confirmed) {
       return;
     }
     setSendingResponse(true);
     try {
       await sendCustomerResponse(id, respId, 'Support Agent');
       await loadDetails();
+      toast.success(`Response successfully dispatched to ${recipient}!`);
       setResponseActionFeedback(`Response successfully dispatched to ${recipient}!`);
       setTimeout(() => setResponseActionFeedback(''), 5000);
     } catch (err) {
       console.error(err);
-      alert('Failed to send response: ' + (err.response?.data?.detail || err.message));
+      toast.error('Failed to send response: ' + (err.response?.data?.detail || err.message));
     } finally {
       setSendingResponse(false);
     }
@@ -195,18 +224,25 @@ export default function ComplaintDetailPage() {
   const handleMergeDuplicate = async (primaryId) => {
     const primary = primaryId || prompt('Enter Primary Ticket ID to Merge into:');
     if (!primary) return;
-    if (!window.confirm(`Are you sure you want to merge this ticket into #${primary}? This ticket will be marked resolved.`)) {
+    const confirmed = await confirm({
+      title: 'Merge Duplicate Ticket',
+      message: `Are you sure you want to merge this ticket into #${primary}? This ticket will be marked resolved and linked to the primary ticket.`,
+      confirmText: 'Merge Ticket',
+      variant: 'warning',
+    });
+    if (!confirmed) {
       return;
     }
     setDuplicateActionLoading(true);
     try {
       await mergeComplaint(id, parseInt(primary), 'Merged duplicate ticket into primary inquiry.');
+      toast.success(`Merged into ticket #${primary}`);
       setDuplicateSuccessMsg(`Merged into ticket #${primary}`);
       setTimeout(() => setDuplicateSuccessMsg(''), 4000);
       loadDetails();
     } catch (err) {
       console.error(err);
-      alert('Failed to merge complaints: ' + (err.response?.data?.detail || err.message));
+      toast.error('Failed to merge complaints: ' + (err.response?.data?.detail || err.message));
     } finally {
       setDuplicateActionLoading(false);
     }
@@ -224,6 +260,21 @@ export default function ComplaintDetailPage() {
       alert('Failed to ignore duplicate warning: ' + (err.response?.data?.detail || err.message));
     } finally {
       setDuplicateActionLoading(false);
+    }
+  };
+
+  const handleEscalate = async (reason) => {
+    setEscalating(true);
+    try {
+      await apiClient.post(`/complaints/${id}/escalate`, { reason });
+      await loadDetails();
+      setResponseActionFeedback('Complaint escalated to leadership.');
+      setTimeout(() => setResponseActionFeedback(''), 4000);
+    } catch (err) {
+      console.error('Failed to escalate complaint:', err);
+      alert('Failed to escalate: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setEscalating(false);
     }
   };
 
@@ -245,6 +296,23 @@ export default function ComplaintDetailPage() {
   const c = data.complaint;
   const draftResponse = data.ai_responses?.find(r => r.response_type === 'DRAFT_REPLY');
   const summaryResponse = data.ai_responses?.find(r => r.response_type === 'SUMMARY');
+  const recommendationResponse = data.ai_responses?.find(r => r.response_type === 'RECOMMENDATION');
+
+  const parsedRecommendationSteps = React.useMemo(() => {
+    if (!recommendationResponse?.content) return [];
+    const lines = recommendationResponse.content.split('\n');
+    const steps = [];
+    for (const line of lines) {
+      const match = line.match(/^\s*\d+[\.\)]\s*(.+)$/);
+      if (match) {
+        steps.push(match[1].trim());
+      }
+    }
+    if (steps.length > 0) return steps;
+    return lines
+      .map(l => l.trim())
+      .filter(l => l && !l.startsWith('AI GENERATED') && !l.startsWith('The agent remains'));
+  }, [recommendationResponse]);
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
@@ -735,8 +803,65 @@ export default function ComplaintDetailPage() {
           </div>
         </div>
 
-        {/* Right Col: AI Summary, Human Feedback & Resolution */}
+        {/* Right Col: AI Summary, Recommendations, Human Feedback & Resolution */}
         <div className="space-y-6">
+
+          {/* Configurable SLA Tracking & Governance Card */}
+          <SLATrackerCard
+            slaMetrics={data.sla_metrics}
+            isEscalated={c.is_escalated}
+            onEscalate={handleEscalate}
+            loadingEscalate={escalating}
+          />
+
+          {/* AI Recommended Resolution Card */}
+          <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/20 via-slate-900/60 to-slate-950/80 space-y-3.5 shadow-xl">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-indigo-500/20">
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                  <Sparkles className="w-3 h-3 text-indigo-400" />
+                  AI GENERATED RECOMMENDATION
+                </span>
+                <h3 className="text-sm font-bold text-white flex items-center gap-1.5 pt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  AI Recommended Resolution
+                </h3>
+              </div>
+              <button
+                onClick={handleRefreshRecommendation}
+                disabled={refreshingRecommendation}
+                className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 transition-colors"
+                title="Recalculate recommended resolution steps"
+              >
+                <RefreshCw className={`w-3 h-3 ${refreshingRecommendation ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            {/* Step-by-Step Resolution */}
+            <div className="space-y-2">
+              {parsedRecommendationSteps.length > 0 ? (
+                parsedRecommendationSteps.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-200 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/90 leading-relaxed">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center text-[10px] font-mono font-bold shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <span className="font-medium">{step}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400 leading-relaxed italic p-2">
+                  {recommendationResponse?.content || 'Resolution steps being generated...'}
+                </p>
+              )}
+            </div>
+
+            {/* Clear Agent Responsibility Notice */}
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>The agent remains responsible for the final decision.</span>
+            </div>
+          </div>
           
           {/* Executive Summary */}
           {summaryResponse && (

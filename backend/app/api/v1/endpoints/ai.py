@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.ai.ai_orchestrator import ai_orchestrator
 from app.ai.rag import rag_engine
 from app.ai.llm import get_llm_provider
 from app.models.intelligence import ModelVersion
+from app.services.assistant_service import assistant_service
+from app.services.assistant_tools import assistant_tools
+from app.services.privacy_service import privacy_service
 
 router = APIRouter()
 
@@ -62,9 +66,10 @@ async def ai_assistant_chat(req: AssistantChatRequest, db: Session = Depends(get
     if query_words and relevant_docs:
         combined_corpus = " ".join([f"{d['title']} {d['content_snippet']}" for d in relevant_docs]).lower()
         has_topic_match = any(
-            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 5 and w[:4] in combined_corpus)
+            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 6 and bool(re.search(rf"\b{re.escape(w[:5])}", combined_corpus)))
             for w in query_words
         )
+
 
     if is_invention_request or (is_policy_inquiry and (not relevant_docs or not has_topic_match)):
         return {
@@ -213,9 +218,86 @@ async def policy_reasoning(req: PolicyReasoningRequest, db: Session = Depends(ge
     )
 
 
-@router.get("/models")
+class ModelVersionOut(BaseModel):
+    id: int
+    model_name: str
+    version: str
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    f1_score: Optional[float] = None
+    training_date: Optional[datetime] = None
+    dataset_version: Optional[str] = None
+    is_active: bool
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/models", response_model=List[ModelVersionOut])
 def get_model_versions(db: Session = Depends(get_db)):
-    return db.query(ModelVersion).all()
+    """Lists all registered model versions."""
+    return db.query(ModelVersion).order_by(ModelVersion.id.asc()).all()
+
+@router.get("/models/active", response_model=List[ModelVersionOut])
+def get_active_model_versions(db: Session = Depends(get_db)):
+    """Exposes currently active model versions through the API with real evaluation metrics."""
+    return db.query(ModelVersion).filter(ModelVersion.is_active == True).all()
+
+@router.post("/models/{model_id}/activate", response_model=ModelVersionOut)
+def activate_model_version(model_id: int, db: Session = Depends(get_db)):
+    """Activates a specific model version and deactivates others for the same target."""
+    m = db.query(ModelVersion).filter(ModelVersion.id == model_id).first()
+    if not m:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Model version not found")
+    
+    # Deactivate others with matching category/prefix
+    base_name = m.model_name.split("(")[0].strip()
+    for other in db.query(ModelVersion).all():
+        if base_name in other.model_name and other.id != m.id:
+            other.is_active = False
+    m.is_active = True
+    db.commit()
+    db.refresh(m)
+    return m
+
+class AssistantRequest(BaseModel):
+    message: str
+    complaint_id: Optional[int] = None
+    ticket_number: Optional[str] = None
+
+@router.post("/assistant")
+async def copilot_assistant(req: AssistantRequest, db: Session = Depends(get_db)):
+    """
+    AI Assistant for agents and managers using strictly controlled backend tools.
+    Zero arbitrary SQL execution.
+    """
+    return await assistant_service.handle_query(
+        message=req.message,
+        db=db,
+        complaint_id=req.complaint_id,
+        ticket_number=req.ticket_number
+    )
+
+@router.get("/customer-history")
+def get_customer_history(
+    email: Optional[str] = None,
+    name: Optional[str] = None,
+    complaint_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Where appropriate, allow authorized agents to view:
+    Previous complaints, previous categories, previous resolutions, complaint frequency, open/closed complaints.
+    Customer PII is masked to prevent unnecessary exposure.
+    """
+    return assistant_tools.get_customer_history(
+        db=db,
+        customer_email=email,
+        customer_name=name,
+        complaint_id=complaint_id
+    )
+
 
 
 class LLMConfigRequest(BaseModel):

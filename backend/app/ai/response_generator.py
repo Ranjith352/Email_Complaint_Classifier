@@ -34,6 +34,12 @@ class ResponseGenerator:
             f"Complaint ID: {ticket_number}\n\n"
             "Regards,\n"
             "Customer Support Team\n\n"
+            "Example for duplicate payment:\n"
+            "Dear Customer,\n\n"
+            "We have reviewed your complaint regarding the duplicate payment. Our Finance team is currently verifying the transaction and will process the necessary refund if the duplicate transaction is confirmed.\n\n"
+            f"Complaint ID: {ticket_number}\n\n"
+            "Regards,\n"
+            "Customer Support Team\n\n"
             "Output valid JSON with keys 'subject' (e.g. 'Re: ... [Ticket #...]') "
             "and 'body' (the full formatted email text). Do not invent false policy commitments."
         )

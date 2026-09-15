@@ -15,6 +15,7 @@ from app.services.lifecycle_service import lifecycle_service
 from app.repositories.complaint_repository import complaint_repository
 from app.ai.duplicate_detector import duplicate_detector
 from app.ai.summarizer import summarizer
+from app.ai.rag import rag_engine
 
 class ComplaintService:
     @staticmethod
@@ -22,6 +23,9 @@ class ComplaintService:
         """Executes full 14-task AI triage, department routing, agent assignment, and lifecycle event logging."""
         total_count = complaint_repository.count(db) + 10001
         ticket_num = f"CMP-{total_count}"
+        while db.query(Complaint).filter(Complaint.complaint_number == ticket_num).first() is not None:
+            total_count += 1
+            ticket_num = f"CMP-{total_count}"
 
         # Normalize Source (EMAIL, WEB, MANUAL)
         raw_source = (complaint_in.source or "WEB").upper()
@@ -32,28 +36,35 @@ class ComplaintService:
         else:
             norm_source = "WEB"
 
+        subject_clean = complaint_in.get_subject()
+        desc_clean = complaint_in.get_description()
+        cust_name = complaint_in.get_customer_name()
+
         # 1. Persist Initial Complaint in NEW status
         complaint = Complaint(
             complaint_number=ticket_num,
-            customer_name=complaint_in.customer_name,
-            customer_email=complaint_in.customer_email,
-            subject=complaint_in.subject,
-            description=complaint_in.get_description(),
+            customer_name=cust_name,
+            customer_email=str(complaint_in.customer_email),
+            subject=subject_clean,
+            description=desc_clean,
             source=norm_source,
             category="Pending Classification",
+            attachment_name=complaint_in.attachment_name,
             status="NEW"
         )
         db.add(complaint)
         db.flush()
 
-        # Lifecycle Event 1: Complaint received
+        # Lifecycle & Audit Event 1: Complaint Created
         lifecycle_service.record_event(
             db=db,
             complaint_id=complaint.id,
-            event_type="COMPLAINT_RECEIVED",
+            event_type="Complaint Created",
             actor=norm_source,
-            description="Complaint received",
-            event_metadata={"source": norm_source, "customer_email": complaint.customer_email}
+            description=f"Complaint received. Ingested from {norm_source}",
+            old_value=None,
+            new_value=ticket_num,
+            event_metadata={"source": norm_source, "customer_email": complaint.customer_email, "attachment": complaint.attachment_name}
         )
 
         # Lifecycle Event 2: AI analysis started
@@ -67,26 +78,35 @@ class ComplaintService:
 
         # 2. Execute AI Pipeline
         ai_res = await ai_orchestrator.process_complaint_full(
-            subject=complaint_in.subject,
-            body=complaint_in.get_description(),
-            customer_name=complaint_in.customer_name or "Valued Customer",
+            subject=subject_clean,
+            body=desc_clean,
+            customer_name=cust_name,
             ticket_number=ticket_num,
             db=db
         )
 
-        # Lifecycle Event 3: AI analysis completed
-        lifecycle_service.transition_status(
+        # Lifecycle Event 3: AI Analysis Completed
+        lifecycle_service.record_event(
             db=db,
-            complaint=complaint,
-            new_status="AI_ANALYZED",
+            complaint_id=complaint.id,
+            event_type="AI Analysis Completed",
             actor="AI_ENGINE",
             description="AI analysis completed",
+            old_value="Pending Classification",
+            new_value=ai_res["category"],
             event_metadata={
                 "category": ai_res["category"],
                 "confidence": ai_res.get("cat_confidence", 0.90),
                 "urgency": ai_res["urgency"],
                 "execution_time_ms": ai_res.get("execution_time_ms")
             }
+        )
+        lifecycle_service.transition_status(
+            db=db,
+            complaint=complaint,
+            new_status="AI_ANALYZED",
+            actor="AI_ENGINE",
+            description="AI analysis completed"
         )
 
         # 3. Confidence-Based Routing & Human Review Decision
@@ -95,6 +115,8 @@ class ComplaintService:
         # - confidence 0.60 - 0.84: Route but mark review_required = true
         # - confidence < 0.60: Do not automatically finalize department. Require human review.
         ai_confidence = float(ai_res.get("confidence", ai_res.get("cat_confidence", 0.90)))
+        dept_name = None
+        team_label = None
 
         if ai_confidence >= 0.85:
             review_required = False
@@ -105,7 +127,17 @@ class ComplaintService:
                 text_content=complaint_in.get_description()
             )
 
-            # Lifecycle Event 4: Automatically Routed to Department
+            # Lifecycle Event 4: Automatically Routed to Department & Department Changed
+            lifecycle_service.record_event(
+                db=db,
+                complaint_id=complaint.id,
+                event_type="Department Changed",
+                actor="AI_ENGINE",
+                description=f"Routed to {dept_name or ai_res['department_name']}",
+                old_value=None,
+                new_value=dept_name or ai_res["department_name"],
+                event_metadata={"department_id": dept_id, "department_name": dept_name, "confidence": ai_confidence}
+            )
             lifecycle_service.transition_status(
                 db=db,
                 complaint=complaint,
@@ -115,15 +147,17 @@ class ComplaintService:
                 event_metadata={"department_id": dept_id, "department_name": dept_name, "confidence": ai_confidence}
             )
 
-            # Lifecycle Event 5: Assigned to Team (if matched)
+            # Lifecycle Event 5: Team Changed
             team_label = ai_res.get("team_name")
             if team_label and team_id:
                 lifecycle_service.record_event(
                     db=db,
                     complaint_id=complaint.id,
-                    event_type="TEAM_ASSIGNED",
+                    event_type="Team Changed",
                     actor="AI_ENGINE",
                     description=f"Assigned to {team_label}",
+                    old_value=None,
+                    new_value=team_label,
                     event_metadata={"team_id": team_id, "team_name": team_label}
                 )
 
@@ -137,6 +171,16 @@ class ComplaintService:
             agent_id = assigned_agent.id if assigned_agent else None
 
             if assigned_agent:
+                lifecycle_service.record_event(
+                    db=db,
+                    complaint_id=complaint.id,
+                    event_type="Agent Assigned",
+                    actor="AI_ENGINE",
+                    description=f"Assigned to {assigned_agent.name}",
+                    old_value=None,
+                    new_value=assigned_agent.name,
+                    event_metadata={"agent_id": assigned_agent.id, "agent_name": assigned_agent.name}
+                )
                 lifecycle_service.transition_status(
                     db=db,
                     complaint=complaint,
@@ -235,8 +279,20 @@ class ComplaintService:
                 }
             )
 
-        # 4. SLA Deadline
-        sla_deadline = sla_service.calculate_deadline(ai_res["urgency"])
+        # 4. SLA Deadline (configured rules: Critical=2h, High=8h, Medium=24h, Low=72h)
+        sla_deadline = sla_service.calculate_deadline(ai_res["urgency"], complaint.created_at, db)
+
+        # Lifecycle & Audit Event: Priority Changed
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=complaint.id,
+            event_type="Priority Changed",
+            actor="AI_ENGINE",
+            description=f"Priority assigned: {ai_res['urgency']} ({ai_res.get('priority_level', 'P3')})",
+            old_value="P3",
+            new_value=ai_res.get("priority_level", "P3"),
+            event_metadata={"urgency": ai_res["urgency"], "priority_score": ai_res.get("priority_score", 50.0)}
+        )
 
         # 5. Update Complaint with enriched AI analytics & review flags
         complaint.category = ai_res["category"]
@@ -323,6 +379,18 @@ class ComplaintService:
             is_approved=True
         ))
 
+        # Record AI Recommended Resolution
+        rec_content = ai_res.get("formatted_recommendation") or ai_res.get("resolution_recommendation")
+        if rec_content:
+            db.add(AIResponse(
+                complaint_id=complaint.id,
+                provider="Grounded-Resolution-Engine",
+                model="Configured-LLM",
+                response_type="RECOMMENDATION",
+                content=rec_content,
+                is_approved=False
+            ))
+
         # 9. Audit and Notifications
         db.add(ComplaintEvent(
             complaint_id=complaint.id,
@@ -331,22 +399,30 @@ class ComplaintService:
             notes=f"Ingested and triaged in {ai_res['execution_time_ms']}ms."
         ))
 
-        if ai_res["urgency"] in ("Critical", "High"):
-            notification_service.create_notification(
-                db=db,
-                title=f"{ai_res['urgency']} Priority Ticket: {ticket_num}",
-                message=f"New complaint in {ai_res['department_name']} ({ai_res['category']}).",
-                notification_type="CRITICAL_TICKET",
-                department_id=dept_id,
-                link_url=f"/complaints/{complaint.id}"
-            )
+        # 9. In-App Routing Notification & Audit Dispatches
+        sla_hours = sla_service.get_sla_hours_for_urgency(ai_res["urgency"], db)
+        dept_display = dept_name or ai_res.get("department_name") or "General"
+        team_display = team_label or ai_res.get("team_name") or "General Triage"
+        notification_service.create_routing_notification(
+            db=db,
+            ticket_number=ticket_num,
+            department_name=dept_display,
+            team_name=team_display,
+            priority=ai_res["urgency"],
+            sla_hours=sla_hours,
+            department_id=dept_id,
+            complaint_id=complaint.id
+        )
 
         audit_service.log_event(
             db=db,
-            action="CREATE_COMPLAINT",
+            action="Complaint Created",
+            user=norm_source,
+            old_value=None,
+            new_value=ticket_num,
+            metadata={"ticket_number": ticket_num, "urgency": ai_res["urgency"], "department": dept_display, "team": team_display, "sla_hours": sla_hours},
             entity_type="COMPLAINT",
-            entity_id=str(complaint.id),
-            details={"ticket_number": ticket_num, "urgency": ai_res["urgency"]}
+            entity_id=str(complaint.id)
         )
 
         db.commit()
@@ -622,6 +698,105 @@ class ComplaintService:
             "status": summary_res.get("status", "success"),
             "error": summary_res.get("error"),
             "download_url": summary_res.get("download_url", "https://ollama.com/download"),
+            "stored": True
+        }
+
+    @staticmethod
+    async def recommend_and_store_resolution(
+        db: Session,
+        complaint_id: int,
+        force_regenerate: bool = False
+    ) -> Dict[str, Any]:
+        """Retrieves or generates grounded AI resolution recommendation steps for a complaint.
+        Stores the resolution into ai_responses table with response_type='RECOMMENDATION'.
+        """
+        import re
+        complaint = complaint_repository.get_by_id(db, complaint_id)
+        if not complaint:
+            raise ValueError(f"Complaint {complaint_id} not found")
+
+        ai_resp = (
+            db.query(AIResponse)
+            .filter(
+                AIResponse.complaint_id == complaint.id,
+                AIResponse.response_type == "RECOMMENDATION"
+            )
+            .first()
+        )
+
+        if ai_resp and not force_regenerate and ai_resp.content:
+            content = ai_resp.content.strip()
+            # Extract numbered steps if present
+            steps = []
+            for line in content.split("\n"):
+                m = re.match(r"^\s*\d+[\.\)]\s*(.+)$", line)
+                if m:
+                    steps.append(m.group(1).strip())
+            if not steps:
+                steps = [line.strip() for line in content.split("\n") if line.strip() and not line.startswith("AI GENERATED") and not line.startswith("The agent remains")]
+
+            return {
+                "complaint_id": complaint.id,
+                "ticket_number": complaint.ticket_number,
+                "header": "AI GENERATED RECOMMENDATION",
+                "disclaimer": "The agent remains responsible for the final decision.",
+                "recommended_steps": steps,
+                "formatted_recommendation": content,
+                "content": content,
+                "provider": ai_resp.provider,
+                "stored": True
+            }
+
+        full_text = complaint.description or complaint.body or ""
+        subject = complaint.subject or "Customer Complaint"
+        combined_text = f"{subject} {full_text}".strip()
+        category = complaint.category or "General"
+
+        rec_res = await rag_engine.generate_grounded_recommendation(
+            complaint_text=combined_text,
+            category=category,
+            db=db
+        )
+
+        formatted = rec_res.get("formatted_recommendation") or rec_res.get("recommendation", "")
+        steps = rec_res.get("recommended_steps", [])
+
+        if ai_resp:
+            ai_resp.content = formatted
+            ai_resp.provider = rec_res.get("provider", "Grounded-Resolution-Engine")
+            ai_resp.created_at = datetime.utcnow()
+        else:
+            db.add(AIResponse(
+                complaint_id=complaint.id,
+                provider=rec_res.get("provider", "Grounded-Resolution-Engine"),
+                model="Configured-LLM",
+                response_type="RECOMMENDATION",
+                content=formatted,
+                is_approved=False
+            ))
+
+        lifecycle_service.record_event(
+            db=db,
+            complaint_id=complaint.id,
+            event_type="AI_ANALYSIS_COMPLETED",
+            actor="RESOLUTION_ENGINE",
+            description="AI resolution recommendation generated",
+            event_metadata={"steps_count": len(steps)}
+        )
+
+        db.commit()
+        db.refresh(complaint)
+
+        return {
+            "complaint_id": complaint.id,
+            "ticket_number": complaint.ticket_number,
+            "header": rec_res.get("header", "AI GENERATED RECOMMENDATION"),
+            "disclaimer": rec_res.get("disclaimer", "The agent remains responsible for the final decision."),
+            "recommended_steps": steps,
+            "formatted_recommendation": formatted,
+            "content": formatted,
+            "provider": rec_res.get("provider"),
+            "cited_documents": rec_res.get("cited_documents", []),
             "stored": True
         }
 

@@ -34,9 +34,19 @@ class KnowledgeDocumentCreate(BaseModel):
     category: Optional[str] = None
     document_type: str = "REFUND_POLICY"
     department: Optional[str] = None
-    content_text: str
+    content_text: Optional[str] = None
+    content: Optional[str] = None
     uploaded_by: Optional[str] = "Admin"
     department_id: Optional[int] = None
+
+    def model_post_init(self, __context):
+        if not self.content_text and self.content:
+            self.content_text = self.content
+        if not self.title and self.document_name:
+            self.title = self.document_name
+        if not self.content_text:
+            self.content_text = ""
+
 
 class KnowledgeDocumentUpdate(BaseModel):
     title: Optional[str] = None

@@ -34,8 +34,12 @@ import {
   seedKnowledgeBase,
   deleteKnowledgeDocument
 } from '../api/knowledge';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function KnowledgeBasePage() {
+  const confirm = useConfirm();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('library'); // 'library' | 'upload' | 'rag'
   const [docs, setDocs] = useState([]);
   const [supportedTypes, setSupportedTypes] = useState([]);
@@ -119,12 +123,20 @@ export default function KnowledgeBasePage() {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to remove "${name}" and its separate chunks and vector embeddings?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Knowledge Document',
+      message: `Are you sure you want to remove "${name}" and its separate chunks and vector embeddings?`,
+      confirmText: 'Delete Document',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteKnowledgeDocument(id);
+      toast.success(`Document "${name}" and its embeddings removed.`);
       showNotification(`Document "${name}" and its embeddings removed.`);
       loadData();
     } catch (err) {
+      toast.error('Failed to delete document.');
       showNotification('Failed to delete document.', 'error');
     }
   };

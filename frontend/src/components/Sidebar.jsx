@@ -2,16 +2,17 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Inbox, UserCheck, Building2, Users, Shield,
-  BarChart3, Bot, BookOpen, Sparkles, Mail, Bell, FileText, Settings, ShieldCheck
+  BarChart3, Bot, BookOpen, Sparkles, Mail, Bell, FileText, Settings, ShieldCheck, X
 } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose }) {
   const sections = [
     {
       title: 'Operations',
       items: [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/complaints', label: 'Complaints Explorer', icon: Inbox },
+        { to: '/department-dashboard', label: 'Dept Dashboard', icon: Building2 },
         { to: '/my-assigned', label: 'My Assigned', icon: UserCheck },
         { to: '/departments', label: 'Departments', icon: Building2 },
         { to: '/teams', label: 'Teams', icon: Users },
@@ -38,8 +39,8 @@ export default function Sidebar() {
     }
   ];
 
-  return (
-    <aside className="w-64 border-r border-slate-800/80 bg-slate-950/60 p-4 flex flex-col justify-between hidden md:flex overflow-y-auto">
+  const renderNavContent = () => (
+    <>
       <div className="space-y-6">
         {sections.map((sec) => (
           <div key={sec.title}>
@@ -52,6 +53,9 @@ export default function Sidebar() {
                     key={item.to}
                     to={item.to}
                     end={item.to === '/'}
+                    onClick={() => {
+                      if (onClose) onClose();
+                    }}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                         isActive
@@ -82,6 +86,41 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop static sidebar */}
+      <aside className="w-64 border-r border-slate-800/80 bg-slate-950/60 p-4 flex-col justify-between hidden md:flex overflow-y-auto shrink-0">
+        {renderNavContent()}
+      </aside>
+
+      {/* Mobile Drawer Backdrop and Sidebar */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            onClick={onClose}
+          />
+
+          {/* Drawer Content */}
+          <aside className="relative w-72 max-w-[80vw] bg-slate-950 border-r border-slate-800 p-4 flex flex-col justify-between overflow-y-auto z-10 shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Navigation Menu</span>
+              <button
+                onClick={onClose}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {renderNavContent()}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

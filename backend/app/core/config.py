@@ -47,22 +47,20 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = Field(default="", env="GROQ_API_KEY")
     GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile", env="GROQ_MODEL")
     
-    # Gmail API OAuth 2.0 Ingestion
+    # Gmail API OAuth 2.0 Ingestion (Configured via .env)
     GMAIL_CLIENT_ID: str = Field(default="", env="GMAIL_CLIENT_ID")
     GMAIL_CLIENT_SECRET: str = Field(default="", env="GMAIL_CLIENT_SECRET")
     GMAIL_REDIRECT_URI: str = Field(default="http://localhost:8000/api/emails/callback", env="GMAIL_REDIRECT_URI")
-    GMAIL_CREDENTIALS_PATH: str = Field(default="credentials.json", env="GMAIL_CREDENTIALS_PATH")
-    GMAIL_TOKEN_PATH: str = Field(default="token.json", env="GMAIL_TOKEN_PATH")
     GMAIL_COMPLAINTS_LABEL: str = Field(default="Complaints", env="GMAIL_COMPLAINTS_LABEL")
     
     # SLA Target Deadlines (Hours)
-    SLA_HOURS_CRITICAL: int = 4
+    SLA_HOURS_CRITICAL: int = 2
     SLA_HOURS_HIGH: int = 8
     SLA_HOURS_MEDIUM: int = 24
-    SLA_HOURS_LOW: int = 48
+    SLA_HOURS_LOW: int = 72
 
     class Config:
-        env_file = ".env"
+        env_file = (str(BASE_DIR.parent / ".env"), str(BASE_DIR / ".env"), ".env")
         extra = "ignore"
 
 settings = Settings()

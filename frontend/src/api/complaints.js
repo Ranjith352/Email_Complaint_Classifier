@@ -20,6 +20,74 @@ export const updateComplaint = async (id, data) => {
   return response.data;
 };
 
+export const assignComplaint = async (id, { agent_id, team_id, department_id, reason }) => {
+  const response = await apiClient.post(`/complaints/${id}/assign`, {
+    agent_id,
+    team_id,
+    department_id,
+    reason
+  });
+  return response.data;
+};
+
+export const reassignComplaint = async (id, { agent_id, team_id, department_id, reason }) => {
+  const response = await apiClient.post(`/complaints/${id}/reassign`, {
+    agent_id,
+    team_id,
+    department_id,
+    reason
+  });
+  return response.data;
+};
+
+export const changePriority = async (id, priority, urgency = null, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/priority`, {
+    priority,
+    urgency,
+    reason
+  });
+  return response.data;
+};
+
+export const changeDepartment = async (id, department_id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/department`, {
+    department_id,
+    reason
+  });
+  return response.data;
+};
+
+export const changeTeam = async (id, team_id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/team`, {
+    team_id,
+    reason
+  });
+  return response.data;
+};
+
+export const changeAgent = async (id, agent_id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/agent`, {
+    agent_id,
+    reason
+  });
+  return response.data;
+};
+
+export const changeStatus = async (id, status, notes = '') => {
+  const response = await apiClient.post(`/complaints/${id}/status`, {
+    status,
+    notes
+  });
+  return response.data;
+};
+
+export const escalateComplaint = async (id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/escalate`, {
+    reason
+  });
+  return response.data;
+};
+
 export const resolveComplaint = async (id, resolutionNotes, markAsKnowledgeBase = true) => {
   const response = await apiClient.post(`/complaints/${id}/resolve`, {
     resolution_notes: resolutionNotes,
@@ -28,11 +96,9 @@ export const resolveComplaint = async (id, resolutionNotes, markAsKnowledgeBase 
   return response.data;
 };
 
-export const reassignComplaint = async (id, department, subDepartment, reason) => {
-  const response = await apiClient.post(`/complaints/${id}/reassign`, {
-    department,
-    sub_department: subDepartment,
-    reason,
+export const reopenComplaint = async (id, reason = '') => {
+  const response = await apiClient.post(`/complaints/${id}/reopen`, null, {
+    params: { reason }
   });
   return response.data;
 };
@@ -97,6 +163,16 @@ export const getComplaintSummary = async (id) => {
   return response.data;
 };
 
+export const getComplaintRecommendations = async (id) => {
+  const response = await apiClient.get(`/complaints/${id}/recommendations`);
+  return response.data;
+};
+
+export const refreshComplaintRecommendations = async (id) => {
+  const response = await apiClient.post(`/complaints/${id}/recommendations`);
+  return response.data;
+};
+
 export const generateCustomerResponse = async (id, tone = "Empathetic & Professional") => {
   const response = await apiClient.post(`/complaints/${id}/generate-response`, { tone });
   return response.data;
@@ -125,6 +201,3 @@ export const sendCustomerResponse = async (id, responseId, sender = "Support Age
   });
   return response.data;
 };
-
-
-

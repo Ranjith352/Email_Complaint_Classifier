@@ -61,6 +61,16 @@ export default function DepartmentsPage() {
                 <span className="font-bold text-brand-400">{d.teams?.length || 4} Teams</span>
               </div>
             </div>
+
+            <div className="pt-3 border-t border-slate-800/80">
+              <a
+                href={`/departments/${d.id}/dashboard`}
+                className="w-full py-2 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-brand-300 hover:text-white text-xs font-bold border border-slate-700/80 flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <span>Open Dedicated Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         ))}
       </div>

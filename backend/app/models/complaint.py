@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from enum import Enum
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean, JSON, ForeignKey
 from sqlalchemy.orm import relationship, synonym
@@ -86,6 +87,10 @@ class Complaint(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
 
+    # Attachments & Media
+    attachment_name = Column(String(255), nullable=True)
+    attachment_url = Column(String(500), nullable=True)
+
     # Relationships
     department = relationship("Department")
     team = relationship("Team")
@@ -99,6 +104,18 @@ class Complaint(Base):
     ticket_number = synonym("complaint_number")
     body = synonym("description")
     priority_level = synonym("priority")
+
+    @property
+    def department_name(self) -> Optional[str]:
+        return self.department.name if self.department else None
+
+    @property
+    def team_name(self) -> Optional[str]:
+        return self.team.name if self.team else None
+
+    @property
+    def assigned_agent_name(self) -> Optional[str]:
+        return self.assigned_agent.name if self.assigned_agent else None
 
 class ComplaintAssignment(Base):
     __tablename__ = "complaint_assignments"
@@ -125,11 +142,21 @@ class ComplaintEvent(Base):
     event_type = Column(String(50), nullable=False, index=True)
     actor = Column(String(100), default="SYSTEM")
     description = Column(Text, nullable=False)
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
     event_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     complaint = relationship("Complaint", back_populates="events")
+
+    # Synonyms for audit and event compliance: user, action, timestamp, old_value, new_value
     notes = synonym("description")
+    user = synonym("actor")
+    action = synonym("event_type")
+    timestamp = synonym("created_at")
+
+    def get_metadata(self):
+        return self.event_metadata or {}
 
 class ComplaintFeedback(Base):
     __tablename__ = "complaint_feedback"
@@ -137,10 +164,23 @@ class ComplaintFeedback(Base):
     id = Column(Integer, primary_key=True, index=True)
     complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    is_category_correct = Column(Boolean, nullable=False)
+    
+    # AI vs Human Correction Telemetry
+    field_name = Column(String(50), default="department", nullable=False)  # department, category, priority, etc.
+    prediction = Column(String(100), nullable=True)                        # AI Prediction: e.g. IT
+    ai_confidence = Column(Float, nullable=True)                           # AI Confidence: e.g. 0.82
+    corrected_value = Column(String(100), nullable=True)                   # Human Label: e.g. Finance
+    human_label = synonym("corrected_value")
+    corrected_by = Column(String(255), nullable=True)                      # Manager / Actor name
+    corrected_at = Column(DateTime, default=datetime.utcnow)
+    reason = Column(Text, nullable=True)
+    complaint_text = Column(Text, nullable=True)                           # Captured text for future model training
+
+    # Legacy fields
+    is_category_correct = Column(Boolean, default=True, nullable=True)
     corrected_category = Column(String(100), nullable=True)
-    is_sentiment_correct = Column(Boolean, nullable=False)
-    rating = Column(Integer, default=5)  # 1-5 agent satisfaction with AI
+    is_sentiment_correct = Column(Boolean, default=True, nullable=True)
+    rating = Column(Integer, default=5, nullable=True)  # 1-5 agent satisfaction with AI
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -38,8 +38,12 @@ export const getOllamaModels = async () => {
 };
 
 
-export const getResolutionRecommendations = async (id) => {
-  const res = await apiClient.post('/ai/chat', { message: `Give resolution recommendations for ticket #${id}` });
+export const getResolutionRecommendations = async (id, text = null, category = 'General') => {
+  if (id) {
+    const res = await apiClient.get(`/complaints/${id}/recommendations`);
+    return res.data;
+  }
+  const res = await apiClient.post('/ai/recommendations', { complaint_text: text || '', category });
   return res.data;
 };
 

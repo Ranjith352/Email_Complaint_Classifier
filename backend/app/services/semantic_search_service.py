@@ -29,7 +29,8 @@ class SemanticSearchService:
         query_embedding = embeddings_engine.get_embedding(query_text)
 
         # 1. PostgreSQL + pgvector execution
-        if IS_POSTGRES:
+        from app.core.database import HAS_PGVECTOR
+        if IS_POSTGRES and HAS_PGVECTOR:
             try:
                 emb_str = "[" + ",".join(str(float(x)) for x in query_embedding) + "]"
                 sql = text("""
@@ -66,6 +67,10 @@ class SemanticSearchService:
                 return results
             except Exception as e:
                 logger.info(f"pgvector query fallback to in-memory vector math: {e}")
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
 
         # 2. SQLite / In-Memory vector cosine similarity fallback
         query = db.query(Complaint)

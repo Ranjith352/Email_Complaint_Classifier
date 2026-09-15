@@ -97,7 +97,7 @@ def test_find_complaints_similar_to_this_one(db: Session):
     similar = semantic_search_service.find_similar_to_complaint(
         db=db,
         complaint_id=c_source.id,
-        limit=5,
+        limit=20,
         threshold=0.50
     )
 

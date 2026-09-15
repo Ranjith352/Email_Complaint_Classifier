@@ -1,0 +1,651 @@
+complaint_text,category,department,subcategory,priority,sentiment
+The invoice for company purchase ORD-28289 has the wrong corporate GSTIN number and incorrect billing address.,Billing,Finance,Unexpected Fee,P1,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Unauthorized Access,Security,Suspicious Login Attempt,P2,Negative
+The invoice for company purchase ORD-87236 has the wrong corporate GSTIN number and incorrect billing address.,Payments,Finance,Pending Verification,P1,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Data Exposure,Security,PII Leakage,P1,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Session Hijack,P2,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Unauthorized Access,Security,Compromised Token,P2,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Network & Connectivity,IT,VPN Disconnection,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,API Key Exposure,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Account Management,Customer Support,Email Change Request,P4,Neutral
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Onboarding,Customer Support,Feature Walkthrough,P4,Negative
+The invoice for company purchase ORD-75435 has the wrong corporate GSTIN number and incorrect billing address.,Payments,Finance,Gateway Timeout,P4,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,API Key Provisioning,P4,Positive
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+Why am I being billed $1591.00 every month when I downgraded to the free tier?,Payments,Finance,Card Declined,P4,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Data Exposure,Security,Public S3 Bucket,P2,Negative
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Account Management,Customer Support,Account Deletion,P3,Positive
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Network & Connectivity,IT,Slow Bandwidth,P3,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Courier Exception,P3,Negative
+My refund for order ORD-73699 of $298.00 has not been credited even though customer support confirmed 7 days ago.,Payments,Finance,Failed UPI Transaction,P2,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Phishing,Security,Credential Harvesting,P2,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Frozen Screen,P1,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Network & Connectivity,IT,Slow Bandwidth,P2,Negative
+My refund for order ORD-53309 of $305.00 has not been credited even though customer support confirmed 7 days ago.,Billing,Finance,Duplicate Debit,P2,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Phishing,Security,Spoofed Domain,P1,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Hardware,IT,Monitor Display Glitch,P2,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Shipment Stuck In Transit,P4,Negative
+Session tokens do not seem to invalidate after changing my master password.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Feedback Submission,P3,Neutral
+Tracking number ORD-86569 shows package in transit for 14 days with zero updates from the courier.,Delivery Delay,Logistics,Courier Exception,P2,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Delivery Delay,Logistics,Past Delivery Date,P3,Negative
+Bank statement shows duplicate processing fee charges of $2405.00 for order ORD-64948.,Payments,Finance,Failed UPI Transaction,P3,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Software Crash,IT,Fatal Exception On Launch,P4,Negative
+Bank statement shows duplicate processing fee charges of $315.00 for order ORD-23104.,Billing,Finance,Currency Conversion Error,P2,Positive
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Onboarding,Customer Support,Feature Walkthrough,P2,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Incomplete Order Delivery,P2,Negative
+Payment of $877.00 via payment gateway timed out but money was debited from my account.,Billing,Finance,Duplicate Debit,P3,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,General Inquiry,Customer Support,Documentation Query,P4,Neutral
+Payment of $2274.00 via payment gateway timed out but money was debited from my account.,Refunds,Finance,Partial Refund Dispute,P4,Positive
+There is an unexpected recurring billing charge of $1527.00 on my statement that I did not authorize.,Billing,Finance,Subscription Overcharge,P2,Neutral
+Cannot access the shared department network drive after the latest OS patch was deployed.,Network & Connectivity,IT,Slow Bandwidth,P2,Negative
+Bank statement shows duplicate processing fee charges of $984.00 for order ORD-30257.,Refunds,Finance,Double Charge Return,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Network & Connectivity,IT,Firewall Block,P4,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Onboarding,Customer Support,API Key Provisioning,P3,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Refunds,Finance,Refund Not Credited,P3,Negative
+Bank statement shows duplicate processing fee charges of $459.00 for order ORD-15014.,Refunds,Finance,Partial Refund Dispute,P4,Negative
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,General Inquiry,Customer Support,Operating Hours,P3,Neutral
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Account Management,Customer Support,Account Deletion,P3,Neutral
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Onboarding,Customer Support,API Key Provisioning,P3,Neutral
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Delivery Delay,Logistics,Courier Exception,P3,Neutral
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Missing Items,Logistics,Incomplete Order Delivery,P2,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Billing,Finance,Duplicate Debit,P4,Positive
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Access & Permissions,IT,Password Expiry,P1,Neutral
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Hardware,IT,Docking Station,P4,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Data Exposure,Security,API Key Exposure,P2,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Phishing,Security,Malicious Attachment,P2,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Phishing,Security,Credential Harvesting,P1,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Cancellation,Customer Support,Membership Termination,P2,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Duplicate Invoice,P1,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,General Inquiry,Customer Support,Feedback Submission,P3,Positive
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Software Crash,IT,Frozen Screen,P4,Negative
+Session tokens do not seem to invalidate after changing my master password.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Phishing,Security,Malicious Attachment,P1,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Access & Permissions,IT,Role Elevation Request,P4,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Invoices,Finance,Tax Invoice Missing,P1,Negative
+I was charged twice for transaction TXN751517 on my credit card. The amount was $992.00 and both debits cleared my bank account.,Payments,Finance,Card Declined,P1,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Delivery Delay,Logistics,Past Delivery Date,P3,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Account Management,Customer Support,Profile Information Update,P1,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Account Management,Customer Support,Verification,P4,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Phishing,Security,Credential Harvesting,P1,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Data Exposure,Security,PII Leakage,P1,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Access & Permissions,IT,Password Expiry,P2,Neutral
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Data Sync Failure,P1,Positive
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Network & Connectivity,IT,DNS Resolution Error,P4,Neutral
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Unauthorized Access,Security,Suspicious Login Attempt,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Shortage,P3,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,PII Leakage,P1,Negative
+The invoice for company purchase ORD-73464 has the wrong corporate GSTIN number and incorrect billing address.,Payments,Finance,Card Declined,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Fatal Exception On Launch,P2,Negative
+There is an unexpected recurring billing charge of $435.00 on my statement that I did not authorize.,Billing,Finance,Unexpected Fee,P1,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,General Inquiry,Customer Support,Feedback Submission,P4,Positive
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Billing,Finance,Currency Conversion Error,P2,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Missing Items,Logistics,Incomplete Order Delivery,P2,Positive
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Policy Violation,Security,Access Sharing,P2,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Shipment Stuck In Transit,P1,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Hardware,IT,Laptop Battery Failure,P4,Negative
+Payment of $306.00 via payment gateway timed out but money was debited from my account.,Payments,Finance,Gateway Timeout,P2,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Damaged Package,Logistics,Defective Unit Inside,P3,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Network & Connectivity,IT,VPN Disconnection,P3,Neutral
+Why am I being billed $2226.00 every month when I downgraded to the free tier?,Invoices,Finance,Address Correction,P4,Neutral
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Billing,Finance,Currency Conversion Error,P1,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Delivery Delay,Logistics,Courier Exception,P4,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Access & Permissions,IT,Password Expiry,P3,Negative
+Why am I being billed $1195.00 every month when I downgraded to the free tier?,Payments,Finance,Gateway Timeout,P4,Positive
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Tax Invoice Missing,P4,Positive
+I was charged twice for transaction TXN296694 on my credit card. The amount was $1496.00 and both debits cleared my bank account.,Invoices,Finance,Duplicate Invoice,P2,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Policy Violation,Security,Unauthorized Tool Usage,P2,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Software Crash,IT,Application Memory Leak,P1,Neutral
+Payment of $1716.00 via payment gateway timed out but money was debited from my account.,Payments,Finance,Pending Verification,P4,Neutral
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Access & Permissions,IT,MFA Token Reset,P2,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,General Inquiry,Customer Support,Documentation Query,P4,Neutral
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Returns & Pickup,Logistics,Return Label Expired,P3,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Returns & Pickup,Logistics,Exchange,P4,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Unauthorized Access,Security,Session Hijack,P2,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Access & Permissions,IT,SSO Login Loop,P1,Neutral
+There is an unexpected recurring billing charge of $647.00 on my statement that I did not authorize.,Invoices,Finance,Tax Invoice Missing,P1,Neutral
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Cancellation,Customer Support,Service Downgrade,P4,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Suspicious Login Attempt,P1,Negative
+My refund for order ORD-31805 of $1241.00 has not been credited even though customer support confirmed 7 days ago.,Invoices,Finance,Tax Invoice Missing,P1,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Account Management,Customer Support,Account Deletion,P2,Positive
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Phishing,Security,Spoofed Domain,P2,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Access & Permissions,IT,MFA Token Reset,P4,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Invoices,Finance,Address Correction,P3,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,General Inquiry,Customer Support,Documentation Query,P4,Positive
+Bank statement shows duplicate processing fee charges of $1226.00 for order ORD-85341.,Payments,Finance,Pending Verification,P3,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Data Exposure,Security,Public S3 Bucket,P2,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Software Crash,IT,Fatal Exception On Launch,P3,Neutral
+My refund for order ORD-52823 of $1716.00 has not been credited even though customer support confirmed 7 days ago.,Refunds,Finance,Partial Refund Dispute,P2,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Software Crash,IT,Data Sync Failure,P3,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Account Management,Customer Support,Verification,P4,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,General Inquiry,Customer Support,Documentation Query,P3,Neutral
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Missing Items,Logistics,Empty Box Received,P3,Negative
+I was charged twice for transaction TXN419149 on my credit card. The amount was $490.00 and both debits cleared my bank account.,Payments,Finance,Failed UPI Transaction,P1,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Hardware,IT,Docking Station,P4,Positive
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,SSO Login Loop,P1,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Access & Permissions,IT,Password Expiry,P3,Positive
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Verification,P1,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Delivery Delay,Logistics,Shipment Stuck In Transit,P2,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Damaged Package,Logistics,Broken Seal,P1,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Hardware,IT,Keyboard Malfunction,P2,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Onboarding,Customer Support,Feature Walkthrough,P2,Neutral
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Shipment Stuck In Transit,P1,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Damaged Package,Logistics,Crushed Shipping Box,P1,Neutral
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Onboarding,Customer Support,Setup Guide Incomplete,P3,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Shortage,P1,Positive
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Access & Permissions,IT,Password Expiry,P4,Neutral
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Double Charge Return,P2,Neutral
+My refund for order ORD-22656 of $1541.00 has not been credited even though customer support confirmed 7 days ago.,Billing,Finance,Subscription Overcharge,P2,Positive
+Why am I being billed $1747.00 every month when I downgraded to the free tier?,Refunds,Finance,Late Cancellation Refund,P1,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Missing Items,Logistics,Wrong Product Shipped,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,Initial Sync,P1,Positive
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Email Change Request,P3,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Hardware,IT,Docking Station,P1,Positive
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,Password Expiry,P3,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Delivery Delay,Logistics,Shipment Stuck In Transit,P1,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Policy Violation,Security,Access Sharing,P1,Negative
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Delivery Delay,Logistics,Courier Exception,P4,Positive
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Account Management,Customer Support,Email Change Request,P2,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Hardware,IT,Keyboard Malfunction,P4,Neutral
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Hardware,IT,Docking Station,P3,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Unauthorized Access,Security,Compromised Token,P2,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Policy Violation,Security,Access Sharing,P1,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Access & Permissions,IT,Role Elevation Request,P4,Positive
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Unauthorized Access,Security,Compromised Token,P1,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Network & Connectivity,IT,VPN Disconnection,P3,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Network & Connectivity,IT,DNS Resolution Error,P2,Negative
+Firewall policy is blocking outgoing HTTPS requests to required partner API endpoints.,Access & Permissions,IT,Password Expiry,P3,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,SSO Login Loop,P3,Positive
+Payment of $169.00 via payment gateway timed out but money was debited from my account.,Refunds,Finance,Late Cancellation Refund,P1,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Account Management,Customer Support,Profile Information Update,P4,Positive
+Courier tracking reports delivery exception: address unreachable even though business was open.,Delivery Delay,Logistics,Weather Delay,P4,Positive
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Network & Connectivity,IT,Firewall Block,P2,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Access & Permissions,IT,Password Expiry,P3,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,General Inquiry,Customer Support,Feedback Submission,P4,Neutral
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Verification,P2,Negative
+Payment of $1620.00 via payment gateway timed out but money was debited from my account.,Payments,Finance,Gateway Timeout,P2,Positive
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Double Charge Return,P1,Neutral
+Received completely wrong model of network switch instead of the enterprise router ordered.,Missing Items,Logistics,Incomplete Order Delivery,P3,Neutral
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Hardware,IT,Monitor Display Glitch,P1,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Damaged Package,Logistics,Defective Unit Inside,P4,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Damaged Package,Logistics,Water Damage,P4,Neutral
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Feedback Submission,P3,Positive
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Invoices,Finance,Address Correction,P3,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Software Crash,IT,Frozen Screen,P2,Neutral
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Account Management,Customer Support,Verification,P2,Neutral
+I was charged twice for transaction TXN434165 on my credit card. The amount was $1388.00 and both debits cleared my bank account.,Refunds,Finance,Partial Refund Dispute,P1,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Network & Connectivity,IT,Slow Bandwidth,P4,Positive
+Payment of $2262.00 via payment gateway timed out but money was debited from my account.,Billing,Finance,Subscription Overcharge,P4,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Onboarding,Customer Support,Feature Walkthrough,P4,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Invoices,Finance,Tax Invoice Missing,P3,Neutral
+Bank statement shows duplicate processing fee charges of $365.00 for order ORD-34551.,Refunds,Finance,Partial Refund Dispute,P3,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Weather Delay,P3,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Late Cancellation Refund,P3,Negative
+There is an unexpected recurring billing charge of $1918.00 on my statement that I did not authorize.,Refunds,Finance,Refund Not Credited,P4,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Network & Connectivity,IT,Firewall Block,P2,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Cancellation,Customer Support,Service Downgrade,P2,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Account Deletion,P4,Neutral
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Account Management,Customer Support,Verification,P3,Negative
+Payment of $2483.00 via payment gateway timed out but money was debited from my account.,Billing,Finance,Unexpected Fee,P4,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Data Exposure,Security,API Key Exposure,P1,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Billing,Finance,Currency Conversion Error,P1,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Returns & Pickup,Logistics,Courier Pickup Missed,P3,Neutral
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Past Delivery Date,P1,Positive
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Frozen Screen,P1,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Access & Permissions,IT,Password Expiry,P4,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Missing Items,Logistics,Shortage,P4,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Session Hijack,P2,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Cancellation,Customer Support,Auto-Renew Disable,P2,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Hardware,IT,Monitor Display Glitch,P3,Neutral
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Damaged Package,Logistics,Crushed Shipping Box,P3,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Empty Box Received,P2,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Delivery Delay,Logistics,Shipment Stuck In Transit,P2,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Software Crash,IT,Data Sync Failure,P3,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Account Management,Customer Support,Email Change Request,P3,Positive
+I was charged twice for transaction TXN772612 on my credit card. The amount was $1099.00 and both debits cleared my bank account.,Billing,Finance,Subscription Overcharge,P2,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,SSO Login Loop,P3,Neutral
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,Role Elevation Request,P4,Neutral
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Policy Violation,Security,Data Exfiltration Risk,P2,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Cancellation,Customer Support,Service Downgrade,P1,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Access & Permissions,IT,SSO Login Loop,P1,Negative
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,General Inquiry,Customer Support,Feedback Submission,P4,Neutral
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Access & Permissions,IT,Password Expiry,P1,Neutral
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Returns & Pickup,Logistics,Return Label Expired,P1,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Unapproved Software,P1,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Cancellation,Customer Support,Service Downgrade,P2,Negative
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Missing Items,Logistics,Incomplete Order Delivery,P3,Positive
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Delivery Delay,Logistics,Past Delivery Date,P3,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Hardware,IT,Docking Station,P2,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Policy Violation,Security,Data Exfiltration Risk,P2,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Onboarding,Customer Support,Initial Sync,P3,Positive
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Returns & Pickup,Logistics,Warehouse Receipt Delay,P3,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Data Exposure,Security,Public S3 Bucket,P2,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Network & Connectivity,IT,Firewall Block,P2,Negative
+I was charged twice for transaction TXN562462 on my credit card. The amount was $1730.00 and both debits cleared my bank account.,Billing,Finance,Duplicate Debit,P1,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Phishing,Security,Malicious Attachment,P2,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Payments,Finance,Card Declined,P4,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Access & Permissions,IT,Role Elevation Request,P4,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Software Crash,IT,Data Sync Failure,P4,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,PII Leakage,P1,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Data Exposure,Security,API Key Exposure,P2,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Onboarding,Customer Support,Setup Guide Incomplete,P2,Negative
+Tracking number ORD-64172 shows package in transit for 14 days with zero updates from the courier.,Damaged Package,Logistics,Broken Seal,P4,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Network & Connectivity,IT,DNS Resolution Error,P2,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Cancellation,Customer Support,Membership Termination,P1,Negative
+Session tokens do not seem to invalidate after changing my master password.,Phishing,Security,Suspicious Email Campaign,P2,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Profile Information Update,P3,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Onboarding,Customer Support,Initial Sync,P3,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Damaged Package,Logistics,Broken Seal,P4,Positive
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Account Management,Customer Support,Verification,P3,Negative
+The invoice for company purchase ORD-44995 has the wrong corporate GSTIN number and incorrect billing address.,Refunds,Finance,Double Charge Return,P3,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Delivery Delay,Logistics,Courier Exception,P1,Neutral
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,Initial Sync,P3,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Damaged Package,Logistics,Broken Seal,P3,Neutral
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Returns & Pickup,Logistics,Return Label Expired,P4,Positive
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Account Management,Customer Support,Profile Information Update,P2,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Damaged Package,Logistics,Broken Seal,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Returns & Pickup,Logistics,Courier Pickup Missed,P2,Positive
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Unauthorized Tool Usage,P2,Negative
+I was charged twice for transaction TXN882032 on my credit card. The amount was $2383.00 and both debits cleared my bank account.,Invoices,Finance,Address Correction,P1,Negative
+My refund for order ORD-17897 of $297.00 has not been credited even though customer support confirmed 7 days ago.,Invoices,Finance,Address Correction,P4,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Service Availability,P4,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Access Sharing,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Account Management,Customer Support,Email Change Request,P2,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Refunds,Finance,Double Charge Return,P2,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Network & Connectivity,IT,DNS Resolution Error,P3,Positive
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Missing Items,Logistics,Empty Box Received,P2,Neutral
+I want to transfer ownership of our corporate workspace to a different administrator email.,Cancellation,Customer Support,Membership Termination,P4,Negative
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,General Inquiry,Customer Support,Documentation Query,P4,Neutral
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Returns & Pickup,Logistics,Return Label Expired,P1,Positive
+Session tokens do not seem to invalidate after changing my master password.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+My refund for order ORD-34966 of $226.00 has not been credited even though customer support confirmed 7 days ago.,Invoices,Finance,Address Correction,P3,Neutral
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Shipment Stuck In Transit,P2,Neutral
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Software Crash,IT,Data Sync Failure,P4,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Damaged Package,Logistics,Defective Unit Inside,P4,Neutral
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Missing Items,Logistics,Wrong Product Shipped,P4,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Hardware,IT,Laptop Battery Failure,P4,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Hardware,IT,Keyboard Malfunction,P4,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Service Downgrade,P2,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Returns & Pickup,Logistics,Return Label Expired,P1,Negative
+There is an unexpected recurring billing charge of $962.00 on my statement that I did not authorize.,Billing,Finance,Currency Conversion Error,P1,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Payments,Finance,Pending Verification,P4,Negative
+I was charged twice for transaction TXN655134 on my credit card. The amount was $2209.00 and both debits cleared my bank account.,Invoices,Finance,Tax Invoice Missing,P2,Negative
+My refund for order ORD-78732 of $624.00 has not been credited even though customer support confirmed 7 days ago.,Invoices,Finance,Wrong GSTIN Number,P2,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Missing Items,Logistics,Wrong Product Shipped,P3,Neutral
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Phishing,Security,Spoofed Domain,P1,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Access Sharing,P2,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Network & Connectivity,IT,Firewall Block,P1,Positive
+Bank statement shows duplicate processing fee charges of $205.00 for order ORD-45532.,Payments,Finance,Card Declined,P1,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Delivery Delay,Logistics,Past Delivery Date,P2,Neutral
+Bank statement shows duplicate processing fee charges of $1608.00 for order ORD-84277.,Refunds,Finance,Partial Refund Dispute,P3,Neutral
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Network & Connectivity,IT,Slow Bandwidth,P1,Negative
+Tracking number ORD-45825 shows package in transit for 14 days with zero updates from the courier.,Returns & Pickup,Logistics,Warehouse Receipt Delay,P4,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Feedback Submission,P3,Neutral
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Onboarding,Customer Support,Setup Guide Incomplete,P2,Neutral
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Cancellation,Customer Support,Membership Termination,P3,Negative
+There is an unexpected recurring billing charge of $2296.00 on my statement that I did not authorize.,Payments,Finance,Failed UPI Transaction,P4,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Unexpected Fee,P3,Neutral
+Why am I being billed $2306.00 every month when I downgraded to the free tier?,Refunds,Finance,Double Charge Return,P2,Positive
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Damaged Package,Logistics,Defective Unit Inside,P3,Neutral
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Network & Connectivity,IT,DNS Resolution Error,P4,Negative
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Auto-Renew Disable,P4,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Software Crash,IT,Application Memory Leak,P3,Neutral
+Need guidance on how to invite additional team members and manage role-based seat allocation.,General Inquiry,Customer Support,Service Availability,P4,Positive
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Access & Permissions,IT,Role Elevation Request,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,API Key Exposure,P2,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Damaged Package,Logistics,Crushed Shipping Box,P3,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Policy Violation,Security,Data Exfiltration Risk,P2,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Returns & Pickup,Logistics,Courier Pickup Missed,P1,Negative
+Firewall policy is blocking outgoing HTTPS requests to required partner API endpoints.,Software Crash,IT,Fatal Exception On Launch,P3,Neutral
+Payment of $2139.00 via payment gateway timed out but money was debited from my account.,Billing,Finance,Subscription Overcharge,P2,Neutral
+No response received on my initial inquiry submitted over 96 hours ago.,General Inquiry,Customer Support,Feedback Submission,P4,Neutral
+Session tokens do not seem to invalidate after changing my master password.,Unauthorized Access,Security,Session Hijack,P1,Negative
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Cancellation,Customer Support,Service Downgrade,P4,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Unapproved Software,P1,Negative
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Account Management,Customer Support,Email Change Request,P2,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Returns & Pickup,Logistics,Exchange,P2,Neutral
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Hardware,IT,Keyboard Malfunction,P2,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Onboarding,Customer Support,Initial Sync,P3,Positive
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Policy Violation,Security,Unauthorized Tool Usage,P2,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Account Management,Customer Support,Email Change Request,P1,Negative
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Onboarding,Customer Support,Initial Sync,P4,Neutral
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Access & Permissions,IT,MFA Token Reset,P2,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,General Inquiry,Customer Support,Operating Hours,P3,Positive
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Returns & Pickup,Logistics,Exchange,P2,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Delivery Delay,Logistics,Past Delivery Date,P3,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Delivery Delay,Logistics,Weather Delay,P2,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Address Correction,P1,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Software Crash,IT,Frozen Screen,P2,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Missing Items,Logistics,Wrong Product Shipped,P3,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Missing Items,Logistics,Incomplete Order Delivery,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Hardware,IT,Monitor Display Glitch,P4,Negative
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Missing Items,Logistics,Shortage,P4,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Service Downgrade,P1,Neutral
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Account Management,Customer Support,Verification,P3,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Cancellation,Customer Support,Auto-Renew Disable,P1,Negative
+My refund for order ORD-30707 of $1822.00 has not been credited even though customer support confirmed 7 days ago.,Invoices,Finance,Tax Invoice Missing,P4,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Phishing,Security,Spoofed Domain,P2,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Cancellation,Customer Support,Membership Termination,P1,Neutral
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Onboarding,Customer Support,Initial Sync,P2,Neutral
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Payments,Finance,Card Declined,P1,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Invoices,Finance,Wrong GSTIN Number,P1,Negative
+Payment of $560.00 via payment gateway timed out but money was debited from my account.,Refunds,Finance,Refund Not Credited,P2,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Past Delivery Date,P4,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Phishing,Security,Suspicious Email Campaign,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,API Key Exposure,P1,Negative
+I was charged twice for transaction TXN989079 on my credit card. The amount was $1250.00 and both debits cleared my bank account.,Payments,Finance,Gateway Timeout,P1,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Damaged Package,Logistics,Defective Unit Inside,P4,Neutral
+Bank statement shows duplicate processing fee charges of $64.00 for order ORD-79243.,Payments,Finance,Pending Verification,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Access & Permissions,IT,Password Expiry,P4,Negative
+Payment of $262.00 via payment gateway timed out but money was debited from my account.,Billing,Finance,Subscription Overcharge,P4,Positive
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,General Inquiry,Customer Support,Feedback Submission,P3,Positive
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Refunds,Finance,Late Cancellation Refund,P3,Neutral
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Delivery Delay,Logistics,Courier Exception,P2,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Unauthorized Access,Security,Compromised Token,P2,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Network & Connectivity,IT,VPN Disconnection,P4,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Missing Items,Logistics,Empty Box Received,P1,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Account Management,Customer Support,Profile Information Update,P1,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Network & Connectivity,IT,Firewall Block,P1,Positive
+Someone attempted multiple password resets on my executive account within the past hour.,Phishing,Security,Credential Harvesting,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Incomplete Order Delivery,P2,Positive
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Invoices,Finance,Tax Invoice Missing,P1,Positive
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Session Hijack,P2,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Damaged Package,Logistics,Defective Unit Inside,P2,Negative
+The invoice for company purchase ORD-55406 has the wrong corporate GSTIN number and incorrect billing address.,Invoices,Finance,Tax Invoice Missing,P3,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+My refund for order ORD-40339 of $2143.00 has not been credited even though customer support confirmed 7 days ago.,Payments,Finance,Gateway Timeout,P4,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Unauthorized Access,Security,Suspicious Login Attempt,P1,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Delivery Delay,Logistics,Weather Delay,P3,Neutral
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Cancellation,Customer Support,Service Downgrade,P2,Positive
+There is an unexpected recurring billing charge of $1301.00 on my statement that I did not authorize.,Payments,Finance,Failed UPI Transaction,P4,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Missing Items,Logistics,Empty Box Received,P1,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Software Crash,IT,Application Memory Leak,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,General Inquiry,Customer Support,Operating Hours,P4,Positive
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Damaged Package,Logistics,Crushed Shipping Box,P1,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Hardware,IT,Monitor Display Glitch,P3,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Billing,Finance,Duplicate Debit,P3,Negative
+There is an unexpected recurring billing charge of $1632.00 on my statement that I did not authorize.,Invoices,Finance,Tax Invoice Missing,P4,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Phishing,Security,Suspicious Email Campaign,P2,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,General Inquiry,Customer Support,Feedback Submission,P4,Positive
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Access & Permissions,IT,MFA Token Reset,P1,Neutral
+Your live chat representative disconnected the session abruptly without solving my support query.,General Inquiry,Customer Support,Feedback Submission,P4,Positive
+Firewall policy is blocking outgoing HTTPS requests to required partner API endpoints.,Network & Connectivity,IT,Slow Bandwidth,P1,Neutral
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Missing Items,Logistics,Empty Box Received,P3,Positive
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Payments,Finance,Pending Verification,P2,Positive
+Your live chat representative disconnected the session abruptly without solving my support query.,Cancellation,Customer Support,Membership Termination,P2,Neutral
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Missing Items,Logistics,Empty Box Received,P2,Positive
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Network & Connectivity,IT,Firewall Block,P2,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Software Crash,IT,Application Memory Leak,P1,Positive
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Account Management,Customer Support,Account Deletion,P3,Negative
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Hardware,IT,Docking Station,P3,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Damaged Package,Logistics,Defective Unit Inside,P2,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Returns & Pickup,Logistics,Courier Pickup Missed,P1,Neutral
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Software Crash,IT,Application Memory Leak,P1,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Session Hijack,P1,Negative
+Why am I being billed $696.00 every month when I downgraded to the free tier?,Billing,Finance,Subscription Overcharge,P4,Neutral
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Data Exposure,Security,API Key Exposure,P2,Negative
+"Corporate VPN keeps dropping every 10 minutes, disconnecting all active SSH sessions to production servers.",Hardware,IT,Docking Station,P1,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Account Management,Customer Support,Profile Information Update,P1,Positive
+I was charged twice for transaction TXN552275 on my credit card. The amount was $690.00 and both debits cleared my bank account.,Refunds,Finance,Double Charge Return,P2,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Missing Items,Logistics,Wrong Product Shipped,P4,Positive
+Tracking number ORD-10500 shows package in transit for 14 days with zero updates from the courier.,Returns & Pickup,Logistics,Return Label Expired,P1,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Returns & Pickup,Logistics,Return Label Expired,P3,Negative
+Payment of $1943.00 via payment gateway timed out but money was debited from my account.,Invoices,Finance,Tax Invoice Missing,P4,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Wrong GSTIN Number,P4,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,General Inquiry,Customer Support,Feedback Submission,P3,Neutral
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Unexpected Fee,P1,Neutral
+Courier tracking reports delivery exception: address unreachable even though business was open.,Returns & Pickup,Logistics,Exchange,P1,Neutral
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Payments,Finance,Failed UPI Transaction,P2,Negative
+Why am I being billed $620.00 every month when I downgraded to the free tier?,Invoices,Finance,Tax Invoice Missing,P3,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Currency Conversion Error,P3,Positive
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Unauthorized Access,Security,Compromised Token,P2,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Delivery Delay,Logistics,Shipment Stuck In Transit,P3,Neutral
+No response received on my initial inquiry submitted over 96 hours ago.,General Inquiry,Customer Support,Feedback Submission,P3,Positive
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Phishing,Security,Malicious Attachment,P1,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Data Exposure,Security,PII Leakage,P1,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Account Management,Customer Support,Email Change Request,P2,Positive
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Past Delivery Date,P2,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Session Hijack,P2,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Unauthorized Access,Security,Suspicious Login Attempt,P1,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Access & Permissions,IT,Role Elevation Request,P3,Negative
+Account takeover alert: user reported unexpected password change notification and lock-out.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Hardware,IT,Keyboard Malfunction,P4,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Network & Connectivity,IT,DNS Resolution Error,P4,Neutral
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,General Inquiry,Customer Support,Documentation Query,P4,Neutral
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Unexpected Fee,P3,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Unauthorized Access,Security,Session Hijack,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,API Key Provisioning,P4,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Network & Connectivity,IT,Firewall Block,P4,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Damaged Package,Logistics,Water Damage,P3,Positive
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Onboarding,Customer Support,API Key Provisioning,P3,Positive
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Software Crash,IT,Application Memory Leak,P4,Negative
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Contract Review,P1,Positive
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Weather Delay,P3,Neutral
+The invoice for company purchase ORD-63633 has the wrong corporate GSTIN number and incorrect billing address.,Payments,Finance,Card Declined,P4,Negative
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Onboarding,Customer Support,Setup Guide Incomplete,P3,Negative
+The invoice for company purchase ORD-32099 has the wrong corporate GSTIN number and incorrect billing address.,Invoices,Finance,Address Correction,P2,Neutral
+Why am I being billed $1970.00 every month when I downgraded to the free tier?,Payments,Finance,Pending Verification,P4,Negative
+I was charged twice for transaction TXN437864 on my credit card. The amount was $795.00 and both debits cleared my bank account.,Payments,Finance,Gateway Timeout,P1,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Payments,Finance,Card Declined,P4,Positive
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Missing Items,Logistics,Empty Box Received,P3,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Data Exposure,Security,API Key Exposure,P1,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Access & Permissions,IT,SSO Login Loop,P1,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Damaged Package,Logistics,Crushed Shipping Box,P4,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Delivery Delay,Logistics,Shipment Stuck In Transit,P2,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Access Sharing,P2,Negative
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Hardware,IT,Laptop Battery Failure,P3,Positive
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Damaged Package,Logistics,Defective Unit Inside,P3,Negative
+The invoice for company purchase ORD-36181 has the wrong corporate GSTIN number and incorrect billing address.,Billing,Finance,Currency Conversion Error,P2,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Returns & Pickup,Logistics,Return Label Expired,P2,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Onboarding,Customer Support,Initial Sync,P1,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Refund Not Credited,P1,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Hardware,IT,Keyboard Malfunction,P1,Negative
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Onboarding,Customer Support,Setup Guide Incomplete,P4,Neutral
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Policy Violation,Security,Access Sharing,P2,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Payments,Finance,Pending Verification,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Cancellation,Customer Support,Membership Termination,P2,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Weather Delay,P2,Positive
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Delivery Delay,Logistics,Shipment Stuck In Transit,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Returns & Pickup,Logistics,Exchange,P4,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Unapproved Software,P1,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Unauthorized Tool Usage,P2,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Missing Items,Logistics,Empty Box Received,P2,Neutral
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,General Inquiry,Customer Support,Documentation Query,P3,Positive
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Cancellation,Customer Support,Contract Review,P2,Neutral
+The invoice for company purchase ORD-61497 has the wrong corporate GSTIN number and incorrect billing address.,Refunds,Finance,Partial Refund Dispute,P4,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Account Management,Customer Support,Verification,P1,Neutral
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Phishing,Security,Malicious Attachment,P1,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Returns & Pickup,Logistics,Return Label Expired,P4,Positive
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Missing Items,Logistics,Shortage,P4,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Service Availability,P4,Neutral
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Missing Items,Logistics,Empty Box Received,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Application Memory Leak,P4,Positive
+I want to transfer ownership of our corporate workspace to a different administrator email.,General Inquiry,Customer Support,Operating Hours,P3,Neutral
+There is an unexpected recurring billing charge of $1041.00 on my statement that I did not authorize.,Payments,Finance,Gateway Timeout,P2,Negative
+Your live chat representative disconnected the session abruptly without solving my support query.,Onboarding,Customer Support,Setup Guide Incomplete,P2,Positive
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Phishing,Security,Credential Harvesting,P2,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Profile Information Update,P2,Negative
+Package was marked as delivered on the tracking portal but no package was left at our reception desk.,Damaged Package,Logistics,Broken Seal,P2,Negative
+Tracking number ORD-46583 shows package in transit for 14 days with zero updates from the courier.,Delivery Delay,Logistics,Weather Delay,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Software Crash,IT,Application Memory Leak,P2,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Courier Exception,P3,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,API Key Provisioning,P4,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Returns & Pickup,Logistics,Courier Pickup Missed,P3,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Onboarding,Customer Support,Initial Sync,P1,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Phishing,Security,Spoofed Domain,P1,Negative
+URGENT: I received a login notification from an unrecognized IP address in Moscow while I was offline.,Data Exposure,Security,PII Leakage,P2,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Policy Violation,Security,Unauthorized Tool Usage,P2,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Duplicate Debit,P2,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Unauthorized Access,Security,Unrecognized IP Address,P2,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Network & Connectivity,IT,Firewall Block,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Email Change Request,P4,Neutral
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Account Management,Customer Support,Verification,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Account Management,Customer Support,Account Deletion,P4,Neutral
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Unauthorized Access,Security,Compromised Token,P2,Negative
+Detected unauthorized export of confidential customer contact lists from our staging environment.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+Tracking number ORD-85067 shows package in transit for 14 days with zero updates from the courier.,Damaged Package,Logistics,Crushed Shipping Box,P4,Positive
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Delivery Delay,Logistics,Courier Exception,P4,Positive
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Hardware,IT,Monitor Display Glitch,P1,Negative
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Delivery Delay,Logistics,Weather Delay,P3,Negative
+Cannot access the shared department network drive after the latest OS patch was deployed.,Access & Permissions,IT,Role Elevation Request,P1,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Delivery Delay,Logistics,Past Delivery Date,P3,Positive
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Software Crash,IT,Data Sync Failure,P2,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Data Exposure,Security,PII Leakage,P1,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,PII Leakage,P2,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Delivery Delay,Logistics,Courier Exception,P1,Negative
+Bank statement shows duplicate processing fee charges of $2274.00 for order ORD-14804.,Billing,Finance,Currency Conversion Error,P3,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Returns & Pickup,Logistics,Return Label Expired,P3,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Compromised Token,P2,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Hardware,IT,Docking Station,P2,Neutral
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Account Management,Customer Support,Email Change Request,P3,Negative
+Why am I being billed $205.00 every month when I downgraded to the free tier?,Payments,Finance,Gateway Timeout,P1,Negative
+Bank statement shows duplicate processing fee charges of $727.00 for order ORD-84732.,Refunds,Finance,Refund Not Credited,P4,Neutral
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Account Management,Customer Support,Account Deletion,P3,Negative
+Security vulnerability noticed: login endpoint does not enforce rate limiting on failed attempts.,Policy Violation,Security,Unauthorized Tool Usage,P1,Negative
+There is an unexpected recurring billing charge of $1498.00 on my statement that I did not authorize.,Refunds,Finance,Partial Refund Dispute,P1,Negative
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+Tracking number ORD-15655 shows package in transit for 14 days with zero updates from the courier.,Damaged Package,Logistics,Defective Unit Inside,P2,Negative
+Tracking number ORD-43850 shows package in transit for 14 days with zero updates from the courier.,Delivery Delay,Logistics,Past Delivery Date,P4,Positive
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Delivery Delay,Logistics,Courier Exception,P3,Negative
+Session tokens do not seem to invalidate after changing my master password.,Phishing,Security,Spoofed Domain,P1,Negative
+Received completely wrong model of network switch instead of the enterprise router ordered.,Missing Items,Logistics,Empty Box Received,P1,Negative
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Policy Violation,Security,Data Exfiltration Risk,P2,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Delivery driver refused to deliver to the 4th floor loading bay despite enterprise delivery instructions.,Delivery Delay,Logistics,Shipment Stuck In Transit,P1,Neutral
+Tracking number ORD-79444 shows package in transit for 14 days with zero updates from the courier.,Returns & Pickup,Logistics,Warehouse Receipt Delay,P2,Neutral
+Session tokens do not seem to invalidate after changing my master password.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+Payment of $44.00 via payment gateway timed out but money was debited from my account.,Refunds,Finance,Double Charge Return,P1,Positive
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Wrong GSTIN Number,P2,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Missing Items,Logistics,Wrong Product Shipped,P3,Neutral
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Access & Permissions,IT,Password Expiry,P4,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Cancellation,Customer Support,Service Downgrade,P2,Neutral
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Network & Connectivity,IT,DNS Resolution Error,P1,Negative
+Our security scanner flagged an exposed API secret token in a public documentation repository.,Unauthorized Access,Security,Suspicious Login Attempt,P1,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Partial Refund Dispute,P4,Neutral
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Missing Items,Logistics,Incomplete Order Delivery,P1,Negative
+Tracking number ORD-88579 shows package in transit for 14 days with zero updates from the courier.,Missing Items,Logistics,Empty Box Received,P2,Positive
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Network & Connectivity,IT,Slow Bandwidth,P1,Negative
+Session tokens do not seem to invalidate after changing my master password.,Data Exposure,Security,API Key Exposure,P1,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Unexpected Fee,P3,Negative
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Damaged Package,Logistics,Defective Unit Inside,P2,Neutral
+Urgent replacement needed: the received industrial sensors are dead on arrival.,Delivery Delay,Logistics,Shipment Stuck In Transit,P3,Positive
+Return package was delivered to your warehouse 10 days ago but the exchange unit has not shipped.,Missing Items,Logistics,Shortage,P3,Neutral
+Multiple team members received a convincing phishing email pretending to be from IT asking for SSO passwords.,Unauthorized Access,Security,Compromised Token,P2,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Hardware,IT,Keyboard Malfunction,P1,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Software Crash,IT,Application Memory Leak,P2,Neutral
+No response received on my initial inquiry submitted over 96 hours ago.,Cancellation,Customer Support,Auto-Renew Disable,P4,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Hardware,IT,Keyboard Malfunction,P3,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Billing,Finance,Subscription Overcharge,P1,Neutral
+No response received on my initial inquiry submitted over 96 hours ago.,Cancellation,Customer Support,Service Downgrade,P3,Neutral
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Hardware,IT,Laptop Battery Failure,P1,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,General Inquiry,Customer Support,Service Availability,P4,Neutral
+Why am I being billed $1347.00 every month when I downgraded to the free tier?,Billing,Finance,Duplicate Debit,P3,Positive
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Onboarding,Customer Support,Feature Walkthrough,P3,Negative
+Session tokens do not seem to invalidate after changing my master password.,Policy Violation,Security,Data Exfiltration Risk,P1,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,General Inquiry,Customer Support,Service Availability,P3,Neutral
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Onboarding,Customer Support,Initial Sync,P4,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Access & Permissions,IT,Password Expiry,P3,Neutral
+I cannot complete account verification because your SMS OTP service does not support my regional carrier.,Cancellation,Customer Support,Membership Termination,P2,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Unauthorized Access,Security,Compromised Token,P2,Negative
+Tracking number ORD-25890 shows package in transit for 14 days with zero updates from the courier.,Missing Items,Logistics,Wrong Product Shipped,P2,Positive
+Received completely wrong model of network switch instead of the enterprise router ordered.,Damaged Package,Logistics,Water Damage,P4,Neutral
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Invoices,Finance,Address Correction,P3,Neutral
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Returns & Pickup,Logistics,Courier Pickup Missed,P3,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,Cancellation,Customer Support,Contract Review,P4,Negative
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Returns & Pickup,Logistics,Exchange,P2,Negative
+Why am I being billed $276.00 every month when I downgraded to the free tier?,Payments,Finance,Card Declined,P4,Positive
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Billing,Finance,Currency Conversion Error,P3,Positive
+DNS resolution errors are preventing our branch office from reaching the core database cluster.,Network & Connectivity,IT,Firewall Block,P4,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Hardware,IT,Laptop Battery Failure,P4,Neutral
+Ordered a 5-pack of commercial barcode scanners but the parcel only contained 2 units.,Missing Items,Logistics,Shortage,P4,Positive
+Potential data exposure: diagnostic log files contain unmasked user credit card and phone numbers.,Data Exposure,Security,PII Leakage,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Cancellation,Customer Support,Service Downgrade,P1,Positive
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Software Crash,IT,Data Sync Failure,P4,Negative
+Bank statement shows duplicate processing fee charges of $2260.00 for order ORD-10946.,Invoices,Finance,Address Correction,P3,Negative
+Someone attempted multiple password resets on my executive account within the past hour.,Policy Violation,Security,Access Sharing,P1,Negative
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Software Crash,IT,Application Memory Leak,P3,Negative
+The courier failed to show up for the scheduled return pickup window for the second consecutive time.,Missing Items,Logistics,Shortage,P2,Negative
+Payment of $2030.00 via payment gateway timed out but money was debited from my account.,Invoices,Finance,Duplicate Invoice,P2,Negative
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Payments,Finance,Failed UPI Transaction,P3,Negative
+Company laptop battery is swelling and won't hold charge for more than 15 minutes off the charger.,Access & Permissions,IT,SSO Login Loop,P4,Negative
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,General Inquiry,Customer Support,Documentation Query,P4,Neutral
+The desktop client hangs indefinitely when exporting reports larger than 50MB.,Network & Connectivity,IT,Slow Bandwidth,P2,Negative
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,General Inquiry,Customer Support,Operating Hours,P4,Neutral
+My refund for order ORD-97294 of $868.00 has not been credited even though customer support confirmed 7 days ago.,Payments,Finance,Pending Verification,P4,Neutral
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Cancellation,Customer Support,Auto-Renew Disable,P1,Negative
+A suspicious email with a macro-enabled macro document attachment was sent to our finance department.,Data Exposure,Security,Sensitive Token in Logs,P1,Negative
+The internal portal keeps crashing with fatal error code 0x8841 whenever I submit the daily batch job.,Access & Permissions,IT,Role Elevation Request,P1,Neutral
+Firewall policy is blocking outgoing HTTPS requests to required partner API endpoints.,Network & Connectivity,IT,VPN Disconnection,P2,Negative
+Unable to generate downloadable PDF tax invoices for the past quarter from the billing portal.,Payments,Finance,Card Declined,P1,Negative
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,Onboarding,Customer Support,Setup Guide Incomplete,P3,Neutral
+Cannot access the shared department network drive after the latest OS patch was deployed.,Network & Connectivity,IT,Firewall Block,P1,Neutral
+Someone attempted multiple password resets on my executive account within the past hour.,Data Exposure,Security,API Key Exposure,P1,Negative
+No response received on my initial inquiry submitted over 96 hours ago.,General Inquiry,Customer Support,Documentation Query,P3,Positive
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Contract Review,P4,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Partial Refund Dispute,P4,Negative
+Courier tracking reports delivery exception: address unreachable even though business was open.,Returns & Pickup,Logistics,Return Label Expired,P3,Negative
+There is an unexpected recurring billing charge of $842.00 on my statement that I did not authorize.,Billing,Finance,Subscription Overcharge,P1,Neutral
+Firewall policy is blocking outgoing HTTPS requests to required partner API endpoints.,Network & Connectivity,IT,VPN Disconnection,P3,Negative
+I have been trying to update my primary business email address for three days but verification emails never arrive.,Onboarding,Customer Support,Setup Guide Incomplete,P1,Neutral
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Double Charge Return,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Account Management,Customer Support,Email Change Request,P4,Negative
+External monitors connected through the USB-C dock randomly flicker black every few seconds.,Hardware,IT,Monitor Display Glitch,P1,Positive
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,General Inquiry,Customer Support,Feedback Submission,P4,Neutral
+Your live chat representative disconnected the session abruptly without solving my support query.,Onboarding,Customer Support,Initial Sync,P3,Neutral
+Account takeover alert: user reported unexpected password change notification and lock-out.,Data Exposure,Security,Sensitive Token in Logs,P2,Negative
+Where can I find the official SLA documentation and technical specifications for enterprise tier?,Cancellation,Customer Support,Service Downgrade,P3,Positive
+I was charged twice for transaction TXN414922 on my credit card. The amount was $894.00 and both debits cleared my bank account.,Payments,Finance,Gateway Timeout,P2,Negative
+My refund for order ORD-70341 of $1471.00 has not been credited even though customer support confirmed 7 days ago.,Refunds,Finance,Partial Refund Dispute,P2,Negative
+I requested account deletion under GDPR regulations two weeks ago but my account is still active.,Cancellation,Customer Support,Auto-Renew Disable,P4,Positive
+SSO authentication enters an infinite redirect loop in Chrome and Edge browsers.,Network & Connectivity,IT,Slow Bandwidth,P1,Positive
+Please cancel my premium membership immediately and confirm that auto-renew is disabled.,Account Management,Customer Support,Verification,P3,Neutral
+Account takeover alert: user reported unexpected password change notification and lock-out.,Unauthorized Access,Security,Unrecognized IP Address,P1,Negative
+I want to transfer ownership of our corporate workspace to a different administrator email.,Account Management,Customer Support,Account Deletion,P2,Negative
+Bank statement shows duplicate processing fee charges of $383.00 for order ORD-76155.,Invoices,Finance,Duplicate Invoice,P2,Neutral
+The onboarding documentation has broken links and outdated code examples that do not work with the latest SDK.,General Inquiry,Customer Support,Service Availability,P3,Neutral
+Session tokens do not seem to invalidate after changing my master password.,Data Exposure,Security,Public S3 Bucket,P1,Negative
+Session tokens do not seem to invalidate after changing my master password.,Phishing,Security,Malicious Attachment,P2,Negative
+The shipping box arrived completely crushed and the fragile electronics inside were cracked and broken.,Damaged Package,Logistics,Broken Seal,P2,Negative
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Invoices,Finance,Duplicate Invoice,P3,Positive
+I cancelled my annual plan within the 14 day guarantee period but only received a partial refund.,Refunds,Finance,Partial Refund Dispute,P4,Negative
+My MFA token has become desynchronized and I am completely locked out of the single sign-on system.,Hardware,IT,Keyboard Malfunction,P1,Negative
+Tracking number ORD-24585 shows package in transit for 14 days with zero updates from the courier.,Damaged Package,Logistics,Water Damage,P4,Neutral
+Credit card transaction failed with error ERR_PAY_901 but amount was deducted immediately.,Refunds,Finance,Partial Refund Dispute,P3,Positive
+Session tokens do not seem to invalidate after changing my master password.,Phishing,Security,Suspicious Email Campaign,P1,Negative
+Need guidance on how to invite additional team members and manage role-based seat allocation.,Onboarding,Customer Support,Setup Guide Incomplete,P1,Neutral

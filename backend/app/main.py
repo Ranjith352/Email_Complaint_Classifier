@@ -12,20 +12,38 @@ if str(BACKEND_DIR) not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.core.config import settings
-from app.core.database import Base, engine, SessionLocal
+from app.db.database import Base, engine, SessionLocal
 from app.core.security import get_password_hash
+from app.core.logging import setup_logging, logger
 from app.models.user import User
 from app.models.organization import Department, Team, Agent, RoutingRule
 from app.models.complaint import Complaint
 from app.models.knowledge import KnowledgeDocument
-from app.models.intelligence import ModelVersion
+from app.models.intelligence import ModelVersion, AIResponse
 from app.models.operations import SLARule
 from app.ai.embeddings import embeddings_engine
+
+# Modular API Routers
+from app.api.auth import router as auth_router
+from app.api.complaints import router as complaints_router
+from app.api.departments import router as departments_router
+from app.api.teams import router as teams_router
+from app.api.agents import router as agents_router
+from app.api.analytics import router as analytics_router
+from app.api.ai import router as ai_router
+from app.api.emails import router as emails_router
+from app.api.notifications import router as notifications_router
+from app.api.knowledge import router as knowledge_router
 from app.api.v1.api_router import api_router
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("autotriage_ai")
+# Configure Structured Logging
+setup_logging(level=settings.LOG_LEVEL if hasattr(settings, "LOG_LEVEL") else "INFO")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -36,6 +54,88 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# =========================================================================
+# 69. API ERROR HANDLING
+# =========================================================================
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Consistent error handler for HTTP exceptions without leaking stack traces."""
+    msg = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    error_code = "HTTP_ERROR"
+    
+    msg_lower = msg.lower()
+    if "not found" in msg_lower:
+        if "complaint" in msg_lower:
+            error_code = "COMPLAINT_NOT_FOUND"
+        elif "department" in msg_lower:
+            error_code = "DEPARTMENT_NOT_FOUND"
+        elif "team" in msg_lower:
+            error_code = "TEAM_NOT_FOUND"
+        elif "agent" in msg_lower:
+            error_code = "AGENT_NOT_FOUND"
+        elif "user" in msg_lower:
+            error_code = "USER_NOT_FOUND"
+        elif "knowledge" in msg_lower:
+            error_code = "KNOWLEDGE_NOT_FOUND"
+        else:
+            error_code = "NOT_FOUND"
+    elif "access denied" in msg_lower or "forbidden" in msg_lower:
+        error_code = "ACCESS_DENIED"
+    elif "incorrect" in msg_lower or "unauthorized" in msg_lower or "invalid credential" in msg_lower:
+        error_code = "INVALID_CREDENTIALS"
+    elif "registered" in msg_lower or "exists" in msg_lower:
+        error_code = "RESOURCE_ALREADY_EXISTS"
+    elif exc.status_code == 400:
+        error_code = "BAD_REQUEST"
+    elif exc.status_code == 401:
+        error_code = "UNAUTHORIZED"
+    elif exc.status_code == 403:
+        error_code = "FORBIDDEN"
+    elif exc.status_code == 404:
+        error_code = "NOT_FOUND"
+    elif exc.status_code >= 500:
+        error_code = "INTERNAL_SERVER_ERROR"
+
+    logger.warning(f"HTTP {exc.status_code} on {request.method} {request.url.path}: {msg} [{error_code}]")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "message": msg,
+            "error_code": error_code,
+            "detail": msg
+        }
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Uniform handler for validation errors."""
+    logger.warning(f"Validation error on {request.method} {request.url.path}: {exc.errors()[:2]}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "message": "Invalid request parameters",
+            "error_code": "VALIDATION_ERROR",
+            "detail": "Invalid request parameters"
+        }
+    )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Fallback handler to prevent leaking stack traces or internal implementation details."""
+    logger.error(f"Unhandled server error on {request.method} {request.url.path}: {exc.__class__.__name__}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "message": "An internal server error occurred. Please contact support.",
+            "error_code": "INTERNAL_SERVER_ERROR",
+            "detail": "Internal server error"
+        }
+    )
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +144,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def seed_enterprise_data():
     """Initializes tables and seeds default organization hierarchy, policies, and fictional demonstration records."""
@@ -348,9 +449,120 @@ def seed_enterprise_data():
                     embedding=emb
                 )
                 db.add(comp)
+                db.flush()
+
+                # Seed AI Recommended Resolution matching required standard
+                rec_steps = {
+                    1: [
+                        "Verify transaction ID.",
+                        "Check payment gateway status.",
+                        "Confirm whether both transactions settled.",
+                        "If duplicate settlement is confirmed, initiate refund.",
+                        "Notify the customer."
+                    ],
+                    2: [
+                        "Verify system error logs and trace IDs.",
+                        "Check affected service health and database connection pool.",
+                        "Confirm whether active user sessions or operations failed.",
+                        "If service failure is confirmed, deploy hotfix or restart degraded service.",
+                        "Notify the customer."
+                    ],
+                    3: [
+                        "Verify reported login IP, device fingerprint, and session tokens.",
+                        "Check account security audit logs and unauthorized access attempts.",
+                        "Confirm whether account credentials or settings were altered.",
+                        "If unauthorized compromise is confirmed, terminate active sessions and reset credentials.",
+                        "Notify the customer."
+                    ]
+                }.get(idx, [
+                    "Verify customer account identity and ticket details.",
+                    "Check departmental service records and prior interactions.",
+                    "Confirm root cause and operational impact of the reported issue.",
+                    "If issue validity is confirmed, initiate standard corrective action.",
+                    "Notify the customer."
+                ])
+
+                rec_formatted = (
+                    "AI GENERATED RECOMMENDATION\n\n"
+                    + "\n".join([f"{s_i+1}. {s_t}" for s_i, s_t in enumerate(rec_steps)])
+                    + "\n\nThe agent remains responsible for the final decision."
+                )
+
+                db.add(AIResponse(
+                    complaint_id=comp.id,
+                    provider="Grounded-Resolution-Engine",
+                    model="Configured-LLM",
+                    response_type="RECOMMENDATION",
+                    content=rec_formatted,
+                    is_approved=False
+                ))
+                db.add(AIResponse(
+                    complaint_id=comp.id,
+                    provider="AutoTriage-Summarizer",
+                    model="Summarizer-v1",
+                    response_type="SUMMARY",
+                    content=t["subject"],
+                    is_approved=True
+                ))
 
             db.commit()
-            logger.info("Seeded fictional demonstration complaints.")
+            logger.info("Seeded fictional demonstration complaints with AI recommendations.")
+
+        # Ensure all existing complaints in database have AI Recommended Resolution
+        for comp in db.query(Complaint).all():
+            has_rec = db.query(AIResponse).filter(
+                AIResponse.complaint_id == comp.id,
+                AIResponse.response_type == "RECOMMENDATION"
+            ).first()
+            if not has_rec:
+                txt = f"{comp.subject} {comp.description or comp.body or ''}".lower()
+                if any(kw in txt for kw in ["duplicate", "double charge", "charged twice", "deducted twice", "two times", "double billing"]):
+                    steps = [
+                        "Verify transaction ID.",
+                        "Check payment gateway status.",
+                        "Confirm whether both transactions settled.",
+                        "If duplicate settlement is confirmed, initiate refund.",
+                        "Notify the customer."
+                    ]
+                elif "500" in txt or "crash" in txt or "timeout" in txt or "outage" in txt:
+                    steps = [
+                        "Verify system error logs and trace IDs.",
+                        "Check affected service health and database connection pool.",
+                        "Confirm whether active user sessions or operations failed.",
+                        "If service degradation is confirmed, deploy hotfix or restart service.",
+                        "Notify the customer."
+                    ]
+                elif "security" in txt or "unauthorized" in txt or "login" in txt or "breach" in txt:
+                    steps = [
+                        "Verify reported login IP, device fingerprint, and session tokens.",
+                        "Check account security audit logs and unauthorized access attempts.",
+                        "Confirm whether account credentials or settings were altered.",
+                        "If unauthorized compromise is confirmed, terminate active sessions and reset credentials.",
+                        "Notify the customer via verified secondary channel."
+                    ]
+                else:
+                    steps = [
+                        "Verify customer account identity and ticket details.",
+                        "Check departmental service records and prior interactions.",
+                        "Confirm root cause and operational impact of the reported issue.",
+                        "If issue validity is confirmed, initiate standard corrective action.",
+                        "Notify the customer."
+                    ]
+
+                content = (
+                    "AI GENERATED RECOMMENDATION\n\n"
+                    + "\n".join([f"{s_i+1}. {s_t}" for s_i, s_t in enumerate(steps)])
+                    + "\n\nThe agent remains responsible for the final decision."
+                )
+                db.add(AIResponse(
+                    complaint_id=comp.id,
+                    provider="Grounded-Resolution-Engine",
+                    model="Configured-LLM",
+                    response_type="RECOMMENDATION",
+                    content=content,
+                    is_approved=False
+                ))
+        db.commit()
 
         # 5. Seed Configurable Routing Rules
         if db.query(RoutingRule).count() == 0:
@@ -382,8 +594,23 @@ def seed_enterprise_data():
 def on_startup():
     seed_enterprise_data()
 
-# Mount API v1 router at /api
+# Mount Modular API Endpoints at /api
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(complaints_router, prefix="/api/complaints", tags=["Complaints"])
+app.include_router(departments_router, prefix="/api/departments", tags=["Departments"])
+app.include_router(teams_router, prefix="/api/teams", tags=["Teams"])
+app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
+app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(ai_router, prefix="/api/ai", tags=["AI"])
+app.include_router(emails_router, prefix="/api/emails", tags=["Emails"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(knowledge_router, prefix="/api/knowledge", tags=["Knowledge"])
+
+# Backwards compatibility router mounts
 app.include_router(api_router, prefix=settings.API_V1_STR)
+if settings.API_V1_STR != "/api/v1":
+    app.include_router(api_router, prefix="/api/v1")
+
 
 @app.get("/")
 def root():

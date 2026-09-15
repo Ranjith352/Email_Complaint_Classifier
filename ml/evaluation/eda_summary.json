@@ -1,0 +1,97 @@
+{
+  "dataset": {
+    "total_samples": 650,
+    "unique_complaints": 137,
+    "missing_values": {
+      "complaint_text": 0,
+      "category": 0,
+      "department": 0,
+      "subcategory": 0,
+      "priority": 0,
+      "sentiment": 0
+    }
+  },
+  "text_statistics": {
+    "char_length": {
+      "mean": 95.38,
+      "median": 97.0,
+      "std": 10.46,
+      "min": 71,
+      "max": 129,
+      "p95": 113.0
+    },
+    "word_count": {
+      "mean": 14.64,
+      "median": 14.0,
+      "std": 2.37,
+      "min": 11,
+      "max": 22,
+      "p95": 19.0
+    }
+  },
+  "vocabulary_size": 578,
+  "top_keywords": {
+    "from": 89,
+    "received": 87,
+    "account": 83,
+    "with": 69,
+    "email": 61,
+    "failed": 49,
+    "enterprise": 45,
+    "credit": 45,
+    "card": 45,
+    "completely": 42,
+    "days": 41,
+    "password": 41,
+    "address": 40,
+    "delivery": 40,
+    "courier": 40,
+    "that": 40,
+    "package": 39,
+    "documentation": 38,
+    "corporate": 36,
+    "support": 36
+  },
+  "target_distributions": {
+    "department": {
+      "Security": 139,
+      "Customer Support": 132,
+      "Finance": 130,
+      "Logistics": 129,
+      "IT": 120
+    },
+    "category": {
+      "Data Exposure": 41,
+      "Delivery Delay": 41,
+      "Unauthorized Access": 37,
+      "Account Management": 37,
+      "Payments": 36,
+      "Missing Items": 35,
+      "General Inquiry": 34,
+      "Network & Connectivity": 33,
+      "Policy Violation": 33,
+      "Billing": 32,
+      "Access & Permissions": 32,
+      "Onboarding": 31,
+      "Refunds": 31,
+      "Invoices": 31,
+      "Cancellation": 30,
+      "Hardware": 29,
+      "Phishing": 28,
+      "Damaged Package": 27,
+      "Software Crash": 26,
+      "Returns & Pickup": 26
+    },
+    "priority": {
+      "P1": 193,
+      "P2": 177,
+      "P3": 141,
+      "P4": 139
+    },
+    "sentiment": {
+      "Negative": 420,
+      "Neutral": 124,
+      "Positive": 106
+    }
+  }
+}

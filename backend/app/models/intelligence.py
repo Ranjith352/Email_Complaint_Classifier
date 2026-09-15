@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean, JSON, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.core.database import Base
 
 class ComplaintPrediction(Base):
@@ -74,11 +74,20 @@ class ModelVersion(Base):
     __tablename__ = "model_versions"
 
     id = Column(Integer, primary_key=True, index=True)
-    task_name = Column(String(100), unique=True, nullable=False)  # classification, sentiment, ner, embeddings, llm
     model_name = Column(String(100), nullable=False)
-    version = Column(String(50), default="1.0.0")
-    provider = Column(String(50), default="local")
+    version = Column(String(50), default="1.0.0", nullable=False)
+    accuracy = Column(Float, nullable=True)
+    precision = Column(Float, nullable=True)
+    recall = Column(Float, nullable=True)
+    f1_score = Column(Float, nullable=True)
+    training_date = Column(DateTime, default=datetime.utcnow)
+    dataset_version = Column(String(50), default="v1.0")
     is_active = Column(Boolean, default=True)
-    accuracy_score = Column(Float, nullable=True)
+
+    # Synonyms and legacy fields for backwards compatibility
+    accuracy_score = synonym("accuracy")
+    task_name = Column(String(100), nullable=True)
+    provider = Column(String(50), default="local")
     description = Column(Text, nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

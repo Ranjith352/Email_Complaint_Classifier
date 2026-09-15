@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
+import Layout from './layouts/MainLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ComplaintsPage from './pages/ComplaintsPage';
@@ -17,6 +17,10 @@ import GmailSyncPage from './pages/GmailSyncPage';
 import NotificationsPage from './pages/NotificationsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
+import DepartmentDashboardPage from './pages/DepartmentDashboardPage';
+
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -28,24 +32,28 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+    <ToastProvider>
+      <ConfirmProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Main 14 Pages */}
-          <Route index element={<DashboardPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Main 14 Pages */}
+              <Route index element={<DashboardPage />} />
           <Route path="complaints" element={<ComplaintsPage />} />
           <Route path="complaints/:id" element={<ComplaintDetailPage />} />
           <Route path="my-assigned" element={<MyAssignedPage />} />
           <Route path="departments" element={<DepartmentsPage />} />
+          <Route path="departments/:id/dashboard" element={<DepartmentDashboardPage />} />
+          <Route path="department-dashboard" element={<DepartmentDashboardPage />} />
           <Route path="teams" element={<TeamsPage />} />
           <Route path="agents" element={<AgentsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
@@ -60,8 +68,10 @@ export default function App() {
           <Route path="gmail" element={<GmailSyncPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ConfirmProvider>
+  </ToastProvider>
   );
 }

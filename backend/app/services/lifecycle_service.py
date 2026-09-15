@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
@@ -13,18 +14,46 @@ class LifecycleService:
         event_type: str,
         actor: str,
         description: str,
+        old_value: Optional[Any] = None,
+        new_value: Optional[Any] = None,
         event_metadata: Optional[Dict[str, Any]] = None
     ) -> ComplaintEvent:
-        """Persists a lifecycle transition or audit milestone event in complaint_events."""
+        """Persists a lifecycle transition or audit milestone event in complaint_events and audit_logs."""
+        def format_val(v):
+            if v is None:
+                return None
+            if isinstance(v, (dict, list)):
+                return json.dumps(v)
+            return str(v)
+
         event = ComplaintEvent(
             complaint_id=complaint_id,
             event_type=event_type,
             actor=actor,
             description=description,
+            old_value=format_val(old_value),
+            new_value=format_val(new_value),
             event_metadata=event_metadata or {},
             created_at=datetime.utcnow()
         )
         db.add(event)
+
+        # Mirror into unified enterprise audit trail
+        try:
+            from app.services.audit_service import audit_service
+            audit_service.log_event(
+                db=db,
+                action=event_type,
+                user=actor,
+                old_value=old_value,
+                new_value=new_value,
+                metadata=event_metadata,
+                entity_type="COMPLAINT",
+                entity_id=str(complaint_id)
+            )
+        except Exception:
+            pass
+
         return event
 
     @classmethod
@@ -70,9 +99,11 @@ class LifecycleService:
         cls.record_event(
             db=db,
             complaint_id=complaint.id,
-            event_type=norm_status,
+            event_type="Status Changed" if old_status != norm_status else norm_status,
             actor=actor,
             description=description or default_desc,
+            old_value=old_status,
+            new_value=norm_status,
             event_metadata=meta
         )
         return complaint

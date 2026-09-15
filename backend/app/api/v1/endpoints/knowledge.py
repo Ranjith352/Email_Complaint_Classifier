@@ -272,9 +272,10 @@ async def query_knowledge_rag(req: RAGQueryRequest, db: Session = Depends(get_db
     if query_words and chunks:
         combined_corpus = " ".join([f"{c['document_title']} {c['chunk_text']}" for c in chunks]).lower()
         has_topic_match = any(
-            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 5 and w[:4] in combined_corpus)
+            re.search(rf"\b{re.escape(w)}\b", combined_corpus) or (len(w) >= 6 and bool(re.search(rf"\b{re.escape(w[:5])}", combined_corpus)))
             for w in query_words
         )
+
 
     # If no relevant policy chunks were retrieved or no substantive topic matches exist
     if not chunks or not has_topic_match:

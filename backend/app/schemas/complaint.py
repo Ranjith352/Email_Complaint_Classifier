@@ -3,15 +3,27 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, EmailStr
 
 class ComplaintCreate(BaseModel):
-    subject: str
+    subject: Optional[str] = None
+    title: Optional[str] = None
     description: Optional[str] = None
     body: Optional[str] = None
     customer_email: EmailStr
     customer_name: Optional[str] = None
     source: str = "WEB"  # EMAIL, WEB, MANUAL
+    attachment_name: Optional[str] = None
+
+    def get_subject(self) -> str:
+        return (self.subject or self.title or "Customer Complaint").strip()
 
     def get_description(self) -> str:
-        return self.description or self.body or ""
+        return (self.description or self.body or self.get_subject()).strip()
+
+    def get_customer_name(self) -> str:
+        if self.customer_name and self.customer_name.strip():
+            return self.customer_name.strip()
+        if self.customer_email:
+            return self.customer_email.split("@")[0].replace(".", " ").title()
+        return "Customer"
 
 class ComplaintUpdate(BaseModel):
     category: Optional[str] = None
@@ -147,6 +159,14 @@ class ComplaintResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None
+    attachment_name: Optional[str] = None
+    attachment_url: Optional[str] = None
+
+    # Relationship display names
+    department_name: Optional[str] = None
+    team_name: Optional[str] = None
+    assigned_agent_name: Optional[str] = None
+    sla_metrics: Optional[Dict[str, Any]] = None
 
     # Backward compatibility aliases
     ticket_number: Optional[str] = None
@@ -155,6 +175,32 @@ class ComplaintResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PriorityUpdateRequest(BaseModel):
+    priority: str  # P1, P2, P3, P4
+    urgency: Optional[str] = None  # Critical, High, Medium, Low
+    reason: Optional[str] = None
+    actor: Optional[str] = "Support Agent"
+
+class DepartmentUpdateRequest(BaseModel):
+    department_id: int
+    reason: Optional[str] = None
+    actor: Optional[str] = "Supervisor"
+
+class TeamUpdateRequest(BaseModel):
+    team_id: int
+    reason: Optional[str] = None
+    actor: Optional[str] = "Supervisor"
+
+class AgentUpdateRequest(BaseModel):
+    agent_id: int
+    reason: Optional[str] = None
+    actor: Optional[str] = "Supervisor"
+
+class StatusUpdateRequest(BaseModel):
+    status: str
+    notes: Optional[str] = None
+    actor: Optional[str] = "Support Agent"
 
 class ComplaintReviewRequest(BaseModel):
     department_id: Optional[int] = None

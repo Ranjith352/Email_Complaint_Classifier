@@ -24,9 +24,14 @@ storage/*.sqlite
 .env
 **/.env
 credentials.json
+*credentials*.json
 token.json
-firebase_key.json
+*token*.json
 token.pickle
+client_secret*.json
+firebase_key.json
+*firebase*.json
+serviceAccountKey*.json
 
 # Node & Frontend
 node_modules/

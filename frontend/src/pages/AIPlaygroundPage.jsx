@@ -169,23 +169,34 @@ export default function AIPlaygroundPage() {
             )}
           </div>
 
-          {/* Column 3: RAG Grounded Advice */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4" /> pgvector RAG Resolution
-            </h3>
+          {/* Column 3: AI Recommended Resolution */}
+          <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/20 via-slate-900/60 to-slate-950/80 space-y-3.5 shadow-xl">
+            <div className="space-y-1 pb-2 border-b border-indigo-500/20">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                <Sparkles className="w-3 h-3 text-indigo-400" /> AI GENERATED RECOMMENDATION
+              </span>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 pt-0.5">
+                <CheckCircle className="w-4 h-4" /> AI Recommended Resolution
+              </h3>
+            </div>
 
             {recommendations && (
               <div className="space-y-3 text-xs">
                 <div className="space-y-2">
                   {recommendations.recommended_steps?.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 text-slate-300">
-                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                    <div key={idx} className="flex items-start gap-2.5 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/90 text-slate-200">
+                      <span className="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center text-[10px] font-mono font-bold shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span>{step}</span>
+                      <span className="font-medium">{step}</span>
                     </div>
                   ))}
+                </div>
+
+                {/* Agent Responsibility Banner */}
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>The agent remains responsible for the final decision.</span>
                 </div>
 
                 {recommendations.similar_cases?.length > 0 && (

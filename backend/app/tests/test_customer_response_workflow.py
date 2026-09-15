@@ -122,8 +122,8 @@ def test_response_workflow_generate_edit_approve_send(client: TestClient, db: Se
     assert events_res.status_code == 200
     events = events_res.json()
     event_types = [e["event_type"] for e in events]
-    assert "RESPONSE_APPROVED" in event_types
-    assert "RESPONSE_SENT" in event_types
+    assert ("RESPONSE_APPROVED" in event_types or "Response Approved" in event_types)
+    assert ("RESPONSE_SENT" in event_types or "Response Sent" in event_types)
 
 def test_editing_approved_response_resets_approval(client: TestClient):
     """Verifies that editing an already-approved draft automatically resets approval

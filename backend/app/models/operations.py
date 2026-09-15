@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, JSON, ForeignKey
+from sqlalchemy.orm import synonym
 from app.core.database import Base
 
 class SLARule(Base):
@@ -47,9 +48,19 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    action = Column(String(100), nullable=False)  # CREATE_COMPLAINT, ROUTE_DEPT, ASSIGN_AGENT, APPROVE_RESPONSE, RESOLVE, UPDATE_SETTINGS
-    entity_type = Column(String(50), nullable=False)  # COMPLAINT, AI_RESPONSE, USER, SLA_RULE
+    user = Column(String(255), nullable=True, default="SYSTEM")
+    action = Column(String(100), nullable=False, index=True)
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    details_json = Column(JSON, nullable=True)
+    entity_type = Column(String(50), nullable=True)
     entity_id = Column(String(100), nullable=True)
     ip_address = Column(String(50), nullable=True)
-    details_json = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Synonyms for transparent access
+    timestamp = synonym("created_at")
+    metadata_json = synonym("details_json")
+
+    def get_metadata(self):
+        return self.details_json or {}

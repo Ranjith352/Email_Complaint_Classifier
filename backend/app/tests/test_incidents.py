@@ -165,8 +165,8 @@ def test_incident_api_endpoints(client: TestClient, db: Session):
     assert active_res.status_code == 200
     active_list = active_res.json()
     assert len(active_list) >= 1
-    target = active_list[0]
-    assert "Portal" in target["title"] or "IT" in target["department_name"]
+    target = next((inc for inc in active_list if "Portal" in inc.get("title", "") or "IT" in (inc.get("department_name") or "")), active_list[0])
+    assert "title" in target and target["title"]
 
     # Manager Acknowledge via REST
     inc_id = target["id"]

@@ -60,6 +60,14 @@ class RAGEngine:
         scored.sort(key=lambda x: x["similarity"], reverse=True)
         return scored[:limit]
 
+    HEADER = "AI GENERATED RECOMMENDATION"
+    DISCLAIMER = "The agent remains responsible for the final decision."
+
+    @classmethod
+    def _format_recommendation_block(cls, steps: List[str]) -> str:
+        numbered_steps = "\n".join([f"{i+1}. {step.strip()}" for i, step in enumerate(steps)])
+        return f"{cls.HEADER}\n\n{numbered_steps}\n\n{cls.DISCLAIMER}"
+
     @classmethod
     async def generate_grounded_recommendation(
         cls,
@@ -67,7 +75,11 @@ class RAGEngine:
         category: str,
         db: Session
     ) -> Dict[str, Any]:
-        """Generates resolution steps strictly grounded on retrieved company documentation."""
+        """Generates step-by-step resolution steps grounded on company policies and SOPs.
+        Clearly marked with:
+        AI GENERATED RECOMMENDATION
+        The agent remains responsible for the final decision.
+        """
         relevant_docs = cls.retrieve_relevant_policies(complaint_text, db, limit=3)
         
         context_str = "\n\n".join([
@@ -79,10 +91,15 @@ class RAGEngine:
 
         system_prompt = (
             "You are a Senior Customer Support Operations Lead. Recommend concrete, step-by-step "
-            "resolution actions for the customer complaint based strictly on the retrieved company policies "
-            "and SOPs below. DO NOT invent policies that are not grounded in the provided context.\n\n"
+            "actionable resolution actions for this complaint based strictly on company procedures.\n"
+            "Format the response as clear sequential numbered steps (e.g.,\n"
+            "1. Verify transaction ID.\n"
+            "2. Check payment gateway status.\n"
+            "3. Confirm whether both transactions settled.\n"
+            "4. If duplicate settlement is confirmed, initiate refund.\n"
+            "5. Notify the customer.)\n\n"
             f"--- OFFICIAL COMPANY POLICIES & SOPS ---\n{context_str}\n---------------------------------------\n"
-            "Return JSON with key 'recommended_steps' (list of strings)."
+            "Return JSON with key 'recommended_steps' (list of clean strings without leading numbers)."
         )
         user_prompt = f"Complaint Category: {category}\nComplaint Text: {complaint_text}"
 
@@ -90,49 +107,88 @@ class RAGEngine:
         if response_text:
             try:
                 data = json.loads(response_text)
-                return {
-                    "recommended_steps": data.get("recommended_steps", []),
-                    "cited_documents": relevant_docs,
-                    "provider": llm.provider_name
-                }
+                raw_steps = data.get("recommended_steps", [])
+                if raw_steps and isinstance(raw_steps, list):
+                    # Clean any accidental leading numbers e.g. "1. "
+                    import re
+                    clean_steps = [re.sub(r"^\d+[\.\)]\s*", "", s).strip() for s in raw_steps if s.strip()]
+                    if clean_steps:
+                        return {
+                            "header": cls.HEADER,
+                            "disclaimer": cls.DISCLAIMER,
+                            "recommended_steps": clean_steps,
+                            "formatted_recommendation": cls._format_recommendation_block(clean_steps),
+                            "recommendation": cls._format_recommendation_block(clean_steps),
+                            "cited_documents": relevant_docs,
+                            "provider": llm.provider_name
+                        }
             except Exception:
                 pass
 
-        # Grounded Fallback based on retrieved documents
+        # Grounded Fallback based on complaint content & category
+        text_lower = complaint_text.lower()
         steps = []
-        if relevant_docs:
-            top_doc = relevant_docs[0]
-            steps.append(f"Execute procedure from [{top_doc['title']}]: {top_doc['content_snippet'][:200]}...")
-        
-        if "Billing" in category:
-            steps.extend([
-                "Audit transaction authorization logs with payment processor.",
-                "Initiate chargeback/reversal if duplicate debit is confirmed within 24h.",
-                "Issue credit note and send automated notification."
-            ])
-        elif "Technical" in category:
-            steps.extend([
-                "Inspect server telemetry and application error trace for user account.",
-                "Clear system cache and trigger token reset if permission is corrupted.",
-                "Deploy patch or instruct user on browser/app cache clearance."
-            ])
-        elif "Security" in category:
-            steps.extend([
-                "Immediately terminate all active sessions and invalidate OAuth tokens.",
-                "Challenge user via secondary verified phone/email before granting access.",
-                "Report incident to security operations lead."
-            ])
-        else:
-            steps.extend([
-                "Acknowledge customer inquiry within the SLA response window.",
-                "Coordinate with logistics or operations team for immediate ticket resolution."
-            ])
 
+        if any(kw in text_lower for kw in ["duplicate", "double charge", "charged twice", "deducted twice", "two times", "double billing"]):
+            steps = [
+                "Verify transaction ID.",
+                "Check payment gateway status.",
+                "Confirm whether both transactions settled.",
+                "If duplicate settlement is confirmed, initiate refund.",
+                "Notify the customer."
+            ]
+        elif "refund" in text_lower or "Billing" in category or "Payment" in category:
+            steps = [
+                "Verify customer billing account and invoice identifier.",
+                "Check payment gateway transaction records and settlement ledger.",
+                "Confirm eligibility according to company refund guidelines.",
+                "If refund is authorized, execute payment reversal through gateway.",
+                "Notify the customer with transaction reference."
+            ]
+        elif "Technical" in category or any(kw in text_lower for kw in ["500", "error", "crash", "timeout", "bug", "portal", "outage"]):
+            steps = [
+                "Verify system error logs and trace IDs for customer session.",
+                "Check affected service health and database connection pool status.",
+                "Confirm whether active user sessions or checkout transactions failed.",
+                "If service degradation is confirmed, deploy hotfix or clear cache/restart service.",
+                "Notify the customer once service stability is verified."
+            ]
+        elif "Security" in category or any(kw in text_lower for kw in ["unauthorized", "suspicious", "hack", "compromise", "freeze", "stolen"]):
+            steps = [
+                "Verify reported login IP, device fingerprint, and session tokens.",
+                "Check account security audit logs and unauthorized access attempts.",
+                "Confirm whether account credentials or settings were altered.",
+                "If unauthorized compromise is confirmed, terminate active sessions and reset credentials.",
+                "Notify the customer via verified secondary channel."
+            ]
+        elif any(kw in text_lower for kw in ["delivery", "courier", "shipping", "parcel", "package", "tracking", "damaged"]):
+            steps = [
+                "Verify order number and courier tracking shipment ID.",
+                "Check courier dispatch logs and package transit status.",
+                "Confirm whether delivery is delayed, misplaced, or damaged.",
+                "If delivery failure or delay is confirmed, expedite courier reshipment or process replacement.",
+                "Notify the customer."
+            ]
+        else:
+            steps = [
+                "Verify customer account identity and ticket details.",
+                "Check departmental service records and prior interactions.",
+                "Confirm root cause and operational impact of the reported issue.",
+                "If issue validity is confirmed, initiate standard corrective action.",
+                "Notify the customer."
+            ]
+
+        formatted = cls._format_recommendation_block(steps)
         return {
+            "header": cls.HEADER,
+            "disclaimer": cls.DISCLAIMER,
             "recommended_steps": steps,
+            "formatted_recommendation": formatted,
+            "recommendation": formatted,
             "cited_documents": relevant_docs,
-            "provider": "Grounded Fallback Engine"
+            "provider": "Grounded Resolution Engine"
         }
+
 
     @classmethod
     async def answer_query(
