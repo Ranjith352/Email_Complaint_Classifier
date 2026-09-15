@@ -503,26 +503,6 @@ Complaint_Classifier/
 
 ---
 
-## 📸 Screenshots
-
-| View | Preview |
-| :--- | :--- |
-| **Executive Triage Command Center** | *Real-time KPI metrics, SLA countdowns, priority breakdowns, and incident alerts.* |
-| **Complaints Explorer** | *Multi-filter table with live search, priority beacons, and loading skeletons.* |
-| **Human-in-the-Loop Response Studio** | *Grounded draft generation, in-place editing, and explicit human approval.* |
-| **Knowledge Base Studio** | *Document upload, vector chunking visualization, and RAG Q&A playground.* |
-
----
-
-## 🔮 Future Improvements
-
-- [ ] **Multi-Tenant Logical Isolation**: Separate data partitions and customized routing rules per corporate client.
-- [ ] **Continuous MLOps Retraining**: Automatic background model fine-tuning triggered when agents modify classifications.
-- [ ] **Omnichannel Integrations**: Direct adapters for Zendesk, Freshdesk, Slack, and WhatsApp Business API.
-- [ ] **Multilingual Vector Subspace**: Leveraging `paraphrase-multilingual-MiniLM-L12-v2` for cross-lingual complaint deduplication across 50+ languages.
-
----
-
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
